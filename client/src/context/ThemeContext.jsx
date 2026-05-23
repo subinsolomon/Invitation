@@ -16,7 +16,30 @@ export const ThemeProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : 'dark';
   });
 
-  const themes = {
+  // ===== CUSTOMIZE THEMES HERE =====
+  // To add new themes (e.g., 'rose', 'beige', 'navy'), add them below.
+  // To change which themes are shown in the UI, modify the 'uiThemes' array at the bottom.
+  // 
+  // Example: Add a Rose theme
+  // rose: {
+  //   primaryColor: '#8b0000',
+  //   secondaryColor: '#fff0f5',
+  //   accentColor: '#ff1493',
+  //   bgColor: '#ffe4e1',
+  //   textColor: '#8b0000',
+  // },
+  //
+  // Example: Add a Beige theme
+  // beige: {
+  //   primaryColor: '#f5f5dc',
+  //   secondaryColor: '#2f4f4f',
+  //   accentColor: '#daa520',
+  //   bgColor: '#fffaf0',
+  //   textColor: '#2f4f4f',
+  // },
+  // ================================
+
+  const allThemes = {
     dark: {
       primaryColor: '#000000',
       secondaryColor: '#ffffff',
@@ -31,32 +54,35 @@ export const ThemeProvider = ({ children }) => {
       bgColor: '#f5f5f5',
       textColor: '#000000',
     },
-    rose: {
-      primaryColor: '#8b0000',
-      secondaryColor: '#fff0f5',
-      accentColor: '#ff1493',
-      bgColor: '#ffe4e1',
-      textColor: '#8b0000',
-    },
+    // Add custom themes here:
+    // rose: { ... },
+    // beige: { ... },
   };
 
-  const currentTheme = themes[theme] || themes.dark;
+  // ===== SELECT WHICH THEMES TO SHOW IN UI =====
+  // Only the themes listed here will appear in the Navigation theme switcher
+  const uiThemes = ['dark', 'light'];
+  // Examples:
+  // const uiThemes = ['dark', 'rose'];  // Show Dark and Rose
+  // const uiThemes = ['light', 'beige']; // Show Light and Beige
+  // const uiThemes = ['dark', 'light', 'rose']; // Show all three
+  // =============================================
+
+  const currentTheme = allThemes[theme] || allThemes.dark;
 
   useEffect(() => {
     localStorage.setItem('wedding-theme', JSON.stringify(theme));
   }, [theme]);
 
   const switchTheme = (newTheme) => {
-    if (themes[newTheme]) {
+    if (allThemes[newTheme]) {
       setTheme(newTheme);
     }
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, currentTheme, switchTheme, availableThemes: Object.keys(themes) }}>
+    <ThemeContext.Provider value={{ theme, currentTheme, switchTheme, availableThemes: uiThemes }}>
       {children}
     </ThemeContext.Provider>
   );
 };
-
-export default ThemeContext;

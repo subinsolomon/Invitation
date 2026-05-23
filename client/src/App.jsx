@@ -5,6 +5,7 @@ import Navigation from './components/Navigation';
 import HomePage from './pages/HomePage';
 import RSVPPage from './pages/RSVPPage';
 import CeremonyPage from './pages/CeremonyPage';
+import GalleryPage from './pages/GalleryPage';
 import './index.css';
 
 function AppContent() {
@@ -15,8 +16,9 @@ function AppContent() {
       <Navigation />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/rsvp" element={<RSVPPage />} />
+        <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/ceremony" element={<CeremonyPage />} />
+        <Route path="/rsvp" element={<RSVPPage />} />
       </Routes>
     </div>
   );
