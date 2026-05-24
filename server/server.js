@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client';
 import rsvpRoutes from './routes/rsvp.js';
 import configRoutes from './routes/config.js';
 import galleryRoutes from './routes/gallery.js';
+import guestPhotosRoutes from './routes/guestPhotos.js';
 
 // Load environment variables
 dotenv.config();
@@ -21,6 +22,7 @@ app.use(express.json());
 app.use('/api/rsvp', rsvpRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/gallery', galleryRoutes);
+app.use('/api/guest-photos', guestPhotosRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

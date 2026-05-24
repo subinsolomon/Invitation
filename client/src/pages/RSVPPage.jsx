@@ -124,18 +124,18 @@ export const RSVPPage = () => {
 
   return (
     <motion.div
-      className="min-h-screen py-20"
+      className="min-h-screen py-8 xs:py-12 sm:py-16 md:py-20 px-3 xs:px-4"
       style={{ backgroundColor: currentTheme.bgColor }}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div variants={itemVariants} className="text-center mb-12">
-          <h1 className="text-5xl font-serif font-bold mb-4" style={{ color: currentTheme.accentColor }}>
+      <div className="max-w-2xl mx-auto">
+        <motion.div variants={itemVariants} className="text-center mb-8 xs:mb-10 sm:mb-12">
+          <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-serif font-bold mb-3 xs:mb-4" style={{ color: currentTheme.accentColor }}>
             RSVP
           </h1>
-          <p className="text-lg" style={{ color: currentTheme.textColor }}>
+          <p className="text-sm xs:text-base sm:text-lg" style={{ color: currentTheme.textColor }}>
             Please let us know if you can join us on our special day
           </p>
         </motion.div>
@@ -143,7 +143,7 @@ export const RSVPPage = () => {
         {success && (
           <motion.div
             variants={itemVariants}
-            className="mb-6 p-4 rounded-lg text-center"
+            className="mb-4 xs:mb-6 p-3 xs:p-4 rounded-lg text-center text-sm xs:text-base"
             style={{
               backgroundColor: '#d4edda',
               color: '#155724',
@@ -158,7 +158,7 @@ export const RSVPPage = () => {
         {errorMessage && (
           <motion.div
             variants={itemVariants}
-            className="mb-6 p-4 rounded-lg text-center"
+            className="mb-4 xs:mb-6 p-3 xs:p-4 rounded-lg text-center text-sm xs:text-base"
             style={{
               backgroundColor: '#f8d7da',
               color: '#721c24',
@@ -171,7 +171,7 @@ export const RSVPPage = () => {
 
         <motion.form
           onSubmit={handleSubmit}
-          className="p-8 rounded-lg space-y-6"
+          className="p-4 xs:p-6 sm:p-8 rounded-lg space-y-4 xs:space-y-5 sm:space-y-6"
           style={{
             backgroundColor: `${currentTheme.primaryColor}33`,
             border: `2px solid ${currentTheme.accentColor}`,
@@ -180,7 +180,7 @@ export const RSVPPage = () => {
         >
           {/* Name Field */}
           <motion.div variants={itemVariants}>
-            <label className="block text-sm font-semibold mb-2" style={{ color: currentTheme.textColor }}>
+            <label className="block text-xs xs:text-sm font-semibold mb-2" style={{ color: currentTheme.textColor }}>
               Name *
             </label>
             <input
@@ -188,7 +188,7 @@ export const RSVPPage = () => {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-4 py-2 rounded-lg border"
+              className="w-full px-3 xs:px-4 py-2 xs:py-3 rounded-lg border text-sm xs:text-base"
               style={{
                 borderColor: errors.name ? '#dc3545' : currentTheme.accentColor,
                 backgroundColor: currentTheme.primaryColor,
@@ -196,12 +196,12 @@ export const RSVPPage = () => {
               }}
               placeholder="Enter your full name"
             />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+            {errors.name && <p className="text-red-500 text-xs xs:text-sm mt-1">{errors.name}</p>}
           </motion.div>
 
           {/* Email Field */}
           <motion.div variants={itemVariants}>
-            <label className="block text-sm font-semibold mb-2" style={{ color: currentTheme.textColor }}>
+            <label className="block text-xs xs:text-sm font-semibold mb-2" style={{ color: currentTheme.textColor }}>
               Email *
             </label>
             <input
@@ -209,7 +209,7 @@ export const RSVPPage = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-4 py-2 rounded-lg border"
+              className="w-full px-3 xs:px-4 py-2 xs:py-3 rounded-lg border text-sm xs:text-base"
               style={{
                 borderColor: errors.email ? '#dc3545' : currentTheme.accentColor,
                 backgroundColor: currentTheme.primaryColor,
@@ -217,12 +217,12 @@ export const RSVPPage = () => {
               }}
               placeholder="your@email.com"
             />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+            {errors.email && <p className="text-red-500 text-xs xs:text-sm mt-1">{errors.email}</p>}
           </motion.div>
 
           {/* Phone Field */}
           <motion.div variants={itemVariants}>
-            <label className="block text-sm font-semibold mb-2" style={{ color: currentTheme.textColor }}>
+            <label className="block text-xs xs:text-sm font-semibold mb-2" style={{ color: currentTheme.textColor }}>
               Phone (Optional)
             </label>
             <input
@@ -230,7 +230,7 @@ export const RSVPPage = () => {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className="w-full px-4 py-2 rounded-lg border"
+              className="w-full px-3 xs:px-4 py-2 xs:py-3 rounded-lg border text-sm xs:text-base"
               style={{
                 borderColor: errors.phone ? '#dc3545' : currentTheme.accentColor,
                 backgroundColor: currentTheme.primaryColor,
@@ -238,15 +238,15 @@ export const RSVPPage = () => {
               }}
               placeholder="+1 (555) 123-4567"
             />
-            {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+            {errors.phone && <p className="text-red-500 text-xs xs:text-sm mt-1">{errors.phone}</p>}
           </motion.div>
 
           {/* Attendance Selection */}
           <motion.div variants={itemVariants}>
-            <label className="block text-sm font-semibold mb-4" style={{ color: currentTheme.textColor }}>
+            <label className="block text-xs xs:text-sm font-semibold mb-3 xs:mb-4" style={{ color: currentTheme.textColor }}>
               Will you be attending? *
             </label>
-            <div className="space-y-3">
+            <div className="space-y-2 xs:space-y-3">
               <div className="flex items-center">
                 <input
                   type="radio"
@@ -255,10 +255,10 @@ export const RSVPPage = () => {
                   value="yes"
                   checked={formData.attendance === 'yes'}
                   onChange={handleChange}
-                  className="w-4 h-4"
+                  className="w-4 h-4 xs:w-5 xs:h-5"
                   style={{ accentColor: currentTheme.accentColor }}
                 />
-                <label htmlFor="yes" className="ml-3" style={{ color: currentTheme.textColor }}>
+                <label htmlFor="yes" className="ml-2 xs:ml-3 text-sm xs:text-base" style={{ color: currentTheme.textColor }}>
                   Yes, I will attend! 🎉
                 </label>
               </div>
@@ -270,10 +270,10 @@ export const RSVPPage = () => {
                   value="no"
                   checked={formData.attendance === 'no'}
                   onChange={handleChange}
-                  className="w-4 h-4"
+                  className="w-4 h-4 xs:w-5 xs:h-5"
                   style={{ accentColor: currentTheme.accentColor }}
                 />
-                <label htmlFor="no" className="ml-3" style={{ color: currentTheme.textColor }}>
+                <label htmlFor="no" className="ml-2 xs:ml-3 text-sm xs:text-base" style={{ color: currentTheme.textColor }}>
                   Sorry, I cannot attend 😢
                 </label>
               </div>
@@ -284,7 +284,7 @@ export const RSVPPage = () => {
           <motion.button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-lg font-semibold text-lg transition-all"
+            className="w-full py-3 xs:py-4 rounded-lg font-semibold text-base xs:text-lg transition-all"
             style={{
               backgroundColor: currentTheme.accentColor,
               color: currentTheme.primaryColor,

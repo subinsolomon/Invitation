@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import RSVPPage from './pages/RSVPPage';
 import CeremonyPage from './pages/CeremonyPage';
 import GalleryPage from './pages/GalleryPage';
+import GuestPhotoPage from './pages/GuestPhotoPage';
 import './index.css';
 
 function AppContent() {
@@ -17,6 +18,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/gallery" element={<GalleryPage />} />
+        <Route path="/guest-photos" element={<GuestPhotoPage />} />
         <Route path="/ceremony" element={<CeremonyPage />} />
         <Route path="/rsvp" element={<RSVPPage />} />
       </Routes>

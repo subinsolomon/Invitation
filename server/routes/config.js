@@ -5,6 +5,8 @@ const router = express.Router();
 // GET /api/config - Get wedding configuration
 router.get('/', (req, res) => {
   const config = {
+    brideName: process.env.BRIDE_NAME || 'Bride',
+    groomName: process.env.GROOM_NAME || 'Groom',
     weddingDate: process.env.WEDDING_DATE,
     location: process.env.WEDDING_LOCATION,
     coordinates: {

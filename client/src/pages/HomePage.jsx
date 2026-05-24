@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import Countdown from '../components/Countdown';
 import Sparkle from '../components/Sparkle';
+import WeddingNames from '../components/WeddingNames';
 import { configService } from '../services/api';
 
 export const HomePage = () => {
@@ -91,18 +92,18 @@ export const HomePage = () => {
           initial="hidden"
           animate="visible"
         >
-          {/* Main Heading */}
-          <motion.div variants={itemVariants}>
-            <h1
-              className="text-5xl md:text-7xl font-serif font-bold mb-4"
-              style={{ color: currentTheme.accentColor }}
-            >
-              Our Wedding
-            </h1>
-            <p className="text-xl md:text-2xl" style={{ color: currentTheme.textColor }}>
-              A celebration of love and commitment
-            </p>
-          </motion.div>
+          {/* Animated Wedding Names */}
+          {config && (
+            <motion.div variants={itemVariants}>
+              <WeddingNames 
+                brideName={config.brideName} 
+                groomName={config.groomName}
+              />
+              <p className="text-xl md:text-2xl mt-8" style={{ color: currentTheme.textColor }}>
+                A celebration of love and commitment
+              </p>
+            </motion.div>
+          )}
 
           {/* Bible Verse with Sparkles */}
           <motion.div variants={itemVariants}>
