@@ -271,15 +271,21 @@ Output: `client/dist/`
 ### Build Backend
 No build step needed; run directly with Node.js.
 
-### Deploy
+### Deploy to Free Domain
 
-**Frontend:**
-- Push `client/dist/` to Vercel, Netlify, or any static host
+📖 **[See DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** for complete step-by-step instructions!
 
-**Backend:**
-- Deploy Node.js app to Render, Railway, Heroku, or VPS
-- Ensure persistent volume for SQLite database
-- Set environment variables in production host
+**Quick Overview:**
+- **Frontend**: Deploy to [Vercel](https://vercel.com) (Free tier with .vercel.app domain)
+- **Backend**: Deploy to [Railway](https://railway.app) (Free tier)
+
+**Fastest Way:**
+1. Push to GitHub
+2. Create Railway account, connect GitHub repo, add environment variables
+3. Create Vercel account, connect GitHub repo, add `VITE_API_URL` pointing to Railway backend
+4. Your site is live! 🎉
+
+See [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for quick reference.
 
 ## Features Guide
 
