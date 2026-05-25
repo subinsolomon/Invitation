@@ -31,7 +31,7 @@ const fetchPhotosFromFolder = async () => {
 
     // Query to get all image files from the folder
     const query = encodeURIComponent(
-      `'${GOOGLE_DRIVE_FOLDER_ID}' in parents and trashed=false and (mimeType='image/jpeg' or mimeType='image/png' or mimeType='image/webp' or mimeType='image/gif' or mimeType='image/heif')`
+      `'${GOOGLE_DRIVE_FOLDER_ID}' in parents and trashed=false and (mimeType='image/jpeg' or mimeType='image/png' or mimeType='image/webp' or mimeType='image/gif')`
     );
 
     const url = `https://www.googleapis.com/drive/v3/files?q=${query}&spaces=drive&fields=files(id,name,createdTime,mimeType)&pageSize=100&orderBy=createdTime%20desc&key=${GOOGLE_DRIVE_API_KEY}`;

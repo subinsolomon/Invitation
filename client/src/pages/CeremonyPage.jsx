@@ -148,15 +148,42 @@ export const CeremonyPage = () => {
             className="rounded-lg overflow-hidden h-96 md:h-auto"
             style={{ minHeight: '400px' }}
           >
-            <iframe
-              width="100%"
-              height="100%"
-              style={{ border: 'none', borderRadius: '8px' }}
-              loading="lazy"
-              allowFullScreen=""
-              referrerPolicy="no-referrer-when-downgrade"
-              src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.2219901290355!2d${config?.coordinates?.lng}!3d${config?.coordinates?.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDDCsDQ1JzI4LjgiTiA3M8KwNTknMDMuNiJX!5e0!3m2!1sen!2sus!4v1234567890`}
-            />
+            {config?.coordinates?.lat && config?.coordinates?.lng ? (
+              <iframe
+                width="100%"
+                height="100%"
+                style={{ border: 'none', borderRadius: '8px' }}
+                loading="lazy"
+                allowFullScreen=""
+                referrerPolicy="no-referrer-when-downgrade"
+                src={`https://www.google.com/maps?q=${config.coordinates.lat},${config.coordinates.lng}&output=embed`}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: `${currentTheme.primaryColor}33` }}>
+                <p style={{ color: currentTheme.textColor }}>Map location not configured</p>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Directions Button */}
+          <motion.div
+            variants={itemVariants}
+            className="flex justify-center"
+          >
+            {config?.coordinates?.lat && config?.coordinates?.lng && (
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${config.coordinates.lat},${config.coordinates.lng}&travelmode=driving`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1"
+                style={{
+                  backgroundColor: currentTheme.accentColor,
+                  color: currentTheme.bgColor,
+                }}
+              >
+                🚗 Give me directions
+              </a>
+            )}
           </motion.div>
         </div>
 
