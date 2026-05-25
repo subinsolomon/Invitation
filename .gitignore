@@ -33,3 +33,4 @@ logs/
 GOOGLE_DRIVE_SETUP.md
 TEST_API_KEY.ps1
 TEST_API_KEY.sh
+node_modules
