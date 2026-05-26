@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const GuestPhotoPage = () => {
   const { currentTheme } = useTheme();
   const [photos, setPhotos] = useState([]);
@@ -17,7 +19,7 @@ export const GuestPhotoPage = () => {
         setLoading(true);
         setError(null);
 
-        const response = await fetch('/api/guest-photos');
+        const response = await fetch(`${API_URL}/api/guest-photos`);
 
         if (!response.ok) {
           throw new Error(`Failed to fetch photos: ${response.statusText}`);

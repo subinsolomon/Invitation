@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const GalleryPage = () => {
   const { currentTheme } = useTheme();
   const [photos, setPhotos] = useState([]);
@@ -16,7 +18,7 @@ export const GalleryPage = () => {
         setLoading(true);
         setError(null);
 
-        const response = await fetch('/api/gallery');
+        const response = await fetch(`${API_URL}/api/gallery`);
 
         if (!response.ok) {
           throw new Error(`Failed to fetch photos: ${response.statusText}`);
@@ -174,7 +176,7 @@ export const GalleryPage = () => {
                   onClick={() => setSelectedPhoto(photo)}
                 >
                   <img
-                    src={photo.proxyUrl || `/api/gallery/image/${photo.id}`}
+                    src={photo.proxyUrl || `${API_URL}/api/gallery/image/${photo.id}`}
                     alt={photo.alt}
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -267,7 +269,7 @@ export const GalleryPage = () => {
 
             {/* Image */}
             <img
-              src={selectedPhoto.proxyUrl || `/api/gallery/image/${selectedPhoto.id}`}
+              src={selectedPhoto.proxyUrl || `${API_URL}/api/gallery/image/${selectedPhoto.id}`}
               alt={selectedPhoto.alt}
               className="w-full rounded-lg"
               onError={(e) => {
