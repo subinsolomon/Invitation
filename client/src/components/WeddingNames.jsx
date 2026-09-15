@@ -49,6 +49,14 @@ export const WeddingNames = ({ brideName = 'Bride', groomName = 'Groom' }) => {
         delayChildren: 0.1,
       },
     },
+    hover: {
+      y: [-5, 5, -5],
+      transition: {
+        duration: 2,
+        repeat: Infinity,
+        ease: 'easeInOut',
+      },
+    },
   };
 
   // Weds text with bounce
@@ -105,18 +113,6 @@ export const WeddingNames = ({ brideName = 'Bride', groomName = 'Groom' }) => {
     },
   };
 
-  // Floating animation loop
-  const floatVariants = {
-    hover: {
-      y: [-5, 5, -5],
-      transition: {
-        duration: 2,
-        repeat: Infinity,
-        ease: 'easeInOut',
-      },
-    },
-  };
-
   return (
     <motion.div
       className="flex flex-col items-center justify-center gap-4 xs:gap-6 sm:gap-8 md:gap-10 lg:gap-12 py-8 xs:py-12 sm:py-16 md:py-20 lg:py-24 px-3 xs:px-4"
@@ -130,7 +126,6 @@ export const WeddingNames = ({ brideName = 'Bride', groomName = 'Groom' }) => {
         initial="hidden"
         animate="visible"
         whileHover="hover"
-        variants={floatVariants}
       >
         {brideChars.map((char, index) => (
           <motion.span
@@ -201,7 +196,6 @@ export const WeddingNames = ({ brideName = 'Bride', groomName = 'Groom' }) => {
         initial="hidden"
         animate="visible"
         whileHover="hover"
-        variants={floatVariants}
       >
         {groomChars.map((char, index) => (
           <motion.span
