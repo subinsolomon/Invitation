@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { rsvpService } from '../services/api';
 
@@ -9,7 +10,7 @@ export const RSVPPage = () => {
     name: '',
     email: '',
     phone: '',
-    attendance: 'yes',
+    attendance: '',
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -48,25 +49,32 @@ export const RSVPPage = () => {
         [name]: '',
       }));
     }
+
+    if (name === 'attendance') {
+      setErrors({});
+      setErrorMessage('');
+    }
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
-    }
+    if (formData.attendance === 'yes') {
+      if (!formData.name.trim()) {
+        newErrors.name = 'Name is required';
+      } else if (formData.name.trim().length < 2) {
+        newErrors.name = 'Name must be at least 2 characters';
+      }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
+      if (!formData.email.trim()) {
+        newErrors.email = 'Email is required';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = 'Please enter a valid email address';
+      }
 
-    if (formData.phone && !/^[\d\s\-\+\(\)]+$/.test(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
+      if (formData.phone && !/^[\d\s\-\+\(\)]+$/.test(formData.phone)) {
+        newErrors.phone = 'Please enter a valid phone number';
+      }
     }
 
     return newErrors;
@@ -97,7 +105,7 @@ export const RSVPPage = () => {
         name: '',
         email: '',
         phone: '',
-        attendance: 'yes',
+        attendance: '',
       });
       setErrors({});
 
@@ -178,6 +186,47 @@ export const RSVPPage = () => {
           }}
           variants={containerVariants}
         >
+          {/* Attendance Selection */}
+          <motion.div variants={itemVariants}>
+            <label className="block text-xs xs:text-sm font-semibold mb-3 xs:mb-4" style={{ color: currentTheme.textColor }}>
+              Will you be attending? *
+            </label>
+            <div className="space-y-2 xs:space-y-3">
+              <div className="flex items-center">
+                <input
+                  type="radio"
+                  id="yes"
+                  name="attendance"
+                  value="yes"
+                  checked={formData.attendance === 'yes'}
+                  onChange={handleChange}
+                  className="w-4 h-4 xs:w-5 xs:h-5"
+                  style={{ accentColor: currentTheme.accentColor }}
+                />
+                <label htmlFor="yes" className="ml-2 xs:ml-3 text-sm xs:text-base" style={{ color: currentTheme.textColor }}>
+                  Yes, I will attend! 🎉
+                </label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="radio"
+                  id="no"
+                  name="attendance"
+                  value="no"
+                  checked={formData.attendance === 'no'}
+                  onChange={handleChange}
+                  className="w-4 h-4 xs:w-5 xs:h-5"
+                  style={{ accentColor: currentTheme.accentColor }}
+                />
+                <label htmlFor="no" className="ml-2 xs:ml-3 text-sm xs:text-base" style={{ color: currentTheme.textColor }}>
+                  Sorry, I cannot attend 😢
+                </label>
+              </div>
+            </div>
+          </motion.div>
+
+          {formData.attendance === 'yes' ? (
+            <>
           {/* Name Field */}
           <motion.div variants={itemVariants}>
             <label className="block text-xs xs:text-sm font-semibold mb-2" style={{ color: currentTheme.textColor }}>
@@ -241,67 +290,59 @@ export const RSVPPage = () => {
             {errors.phone && <p className="text-red-500 text-xs xs:text-sm mt-1">{errors.phone}</p>}
           </motion.div>
 
-          {/* Attendance Selection */}
-          <motion.div variants={itemVariants}>
-            <label className="block text-xs xs:text-sm font-semibold mb-3 xs:mb-4" style={{ color: currentTheme.textColor }}>
-              Will you be attending? *
-            </label>
-            <div className="space-y-2 xs:space-y-3">
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="yes"
-                  name="attendance"
-                  value="yes"
-                  checked={formData.attendance === 'yes'}
-                  onChange={handleChange}
-                  className="w-4 h-4 xs:w-5 xs:h-5"
-                  style={{ accentColor: currentTheme.accentColor }}
-                />
-                <label htmlFor="yes" className="ml-2 xs:ml-3 text-sm xs:text-base" style={{ color: currentTheme.textColor }}>
-                  Yes, I will attend! 🎉
-                </label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="no"
-                  name="attendance"
-                  value="no"
-                  checked={formData.attendance === 'no'}
-                  onChange={handleChange}
-                  className="w-4 h-4 xs:w-5 xs:h-5"
-                  style={{ accentColor: currentTheme.accentColor }}
-                />
-                <label htmlFor="no" className="ml-2 xs:ml-3 text-sm xs:text-base" style={{ color: currentTheme.textColor }}>
-                  Sorry, I cannot attend 😢
-                </label>
-              </div>
-            </div>
-          </motion.div>
+            </>
+          ) : formData.attendance === 'no' ? (
+            <motion.p
+              variants={itemVariants}
+              className="rounded-lg p-4 text-center text-sm xs:text-base"
+              style={{
+                backgroundColor: `${currentTheme.accentColor}22`,
+                color: currentTheme.textColor,
+              }}
+            >
+              No worries! We will eat an extra slice of cake in your honor. 🍰
+            </motion.p>
+          ) : null}
 
           {/* Submit Button */}
-          <motion.button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 xs:py-4 rounded-lg font-semibold text-base xs:text-lg transition-all"
-            style={{
-              backgroundColor: currentTheme.accentColor,
-              color: currentTheme.primaryColor,
-              opacity: loading ? 0.6 : 1,
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
-            whileHover={{ scale: loading ? 1 : 1.02 }}
-            whileTap={{ scale: loading ? 1 : 0.98 }}
-            variants={itemVariants}
-          >
-            {loading ? 'Submitting...' : 'Submit RSVP'}
-          </motion.button>
+          {formData.attendance === 'yes' && (
+            <motion.button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 xs:py-4 rounded-lg font-semibold text-base xs:text-lg transition-all"
+              style={{
+                backgroundColor: currentTheme.accentColor,
+                color: currentTheme.primaryColor,
+                opacity: loading ? 0.6 : 1,
+                cursor: loading ? 'not-allowed' : 'pointer',
+              }}
+              whileHover={{ scale: loading ? 1 : 1.02 }}
+              whileTap={{ scale: loading ? 1 : 0.98 }}
+              variants={itemVariants}
+            >
+              {loading ? 'Submitting...' : 'Submit RSVP'}
+            </motion.button>
+          )}
 
-          <p className="text-sm text-center" style={{ color: currentTheme.textColor }}>
-            * Required fields
-          </p>
+          {formData.attendance === 'yes' && (
+            <p className="text-sm text-center" style={{ color: currentTheme.textColor }}>
+              * Required fields
+            </p>
+          )}
         </motion.form>
+
+        <motion.div variants={itemVariants} className="mt-6 text-center">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 rounded-lg border px-5 py-3 text-sm font-semibold transition-all"
+            style={{
+              borderColor: currentTheme.accentColor,
+              color: currentTheme.accentColor,
+            }}
+          >
+            ← Back to Home
+          </Link>
+        </motion.div>
       </div>
     </motion.div>
   );
