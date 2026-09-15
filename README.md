@@ -1,3 +1,4 @@
+
 # 💒 Wedding Invitation Website
 
 A beautiful, modern wedding invitation website built with React, Express, and SQLite. Features include an elegant homepage with countdown timer, RSVP management, ceremony details, theme switching, and smooth animations.
