@@ -4,6 +4,8 @@ import { useTheme } from '../context/ThemeContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+const getApiUrl = (path) => (path?.startsWith('http') ? path : `${API_URL}${path}`);
+
 export const GuestPhotoPage = () => {
   const { currentTheme } = useTheme();
   const [photos, setPhotos] = useState([]);
@@ -49,7 +51,7 @@ export const GuestPhotoPage = () => {
     try {
       setDownloadingIds(prev => new Set([...prev, photo.id]));
       
-      const response = await fetch(photo.downloadProxyUrl);
+      const response = await fetch(getApiUrl(photo.downloadProxyUrl));
       
       if (!response.ok) {
         throw new Error('Failed to download photo');
@@ -193,7 +195,7 @@ export const GuestPhotoPage = () => {
                   className="relative aspect-square overflow-hidden bg-gray-200"
                 >
                   <motion.img
-                    src={photo.proxyUrl}
+                    src={getApiUrl(photo.proxyUrl)}
                     alt={photo.alt}
                     className="w-full h-full object-cover"
                     whileHover={{ scale: 1.1 }}

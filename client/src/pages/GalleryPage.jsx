@@ -4,6 +4,8 @@ import { useTheme } from '../context/ThemeContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+const getApiUrl = (path) => (path?.startsWith('http') ? path : `${API_URL}${path}`);
+
 export const GalleryPage = () => {
   const { currentTheme } = useTheme();
   const [photos, setPhotos] = useState([]);
@@ -185,7 +187,7 @@ export const GalleryPage = () => {
                   onClick={() => setSelectedPhoto(photo)}
                 >
                   <img
-                    src={photo.proxyUrl || `${API_URL}/api/gallery/image/${photo.id}`}
+                    src={getApiUrl(photo.proxyUrl || `/api/gallery/image/${photo.id}`)}
                     alt={photo.alt}
                     className="w-full h-full object-cover"
                     onError={(e) => {
