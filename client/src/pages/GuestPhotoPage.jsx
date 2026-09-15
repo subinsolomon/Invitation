@@ -9,7 +9,6 @@ export const GuestPhotoPage = () => {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [downloadingIds, setDownloadingIds] = useState(new Set());
 
   // Fetch guest photos from backend API
@@ -116,20 +115,6 @@ export const GuestPhotoPage = () => {
     },
   };
 
-  const modalVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: { duration: 0.3 },
-    },
-    exit: {
-      opacity: 0,
-      scale: 0.8,
-      transition: { duration: 0.3 },
-    },
-  };
-
   return (
     <motion.div
       className="min-h-screen py-8 xs:py-12 sm:py-16 md:py-20 px-3 xs:px-4"
@@ -205,8 +190,7 @@ export const GuestPhotoPage = () => {
               >
                 {/* Image Container */}
                 <div
-                  className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer"
-                  onClick={() => setSelectedPhoto(photo)}
+                  className="relative aspect-square overflow-hidden bg-gray-200"
                 >
                   <motion.img
                     src={photo.proxyUrl}
@@ -272,65 +256,6 @@ export const GuestPhotoPage = () => {
         )}
       </div>
 
-      {/* Lightbox Modal */}
-      {selectedPhoto && (
-        <motion.div
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-3 xs:p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setSelectedPhoto(null)}
-        >
-          <motion.div
-            className="relative max-w-2xl max-h-96 w-full"
-            variants={modalVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={selectedPhoto.proxyUrl}
-              alt={selectedPhoto.alt}
-              className="w-full h-full object-contain rounded-lg"
-            />
-
-            {/* Modal Close Button */}
-            <motion.button
-              onClick={() => setSelectedPhoto(null)}
-              className="absolute -top-8 xs:-top-10 -right-8 xs:-right-10 text-white text-2xl xs:text-3xl hover:text-gray-300 transition-colors"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              ✕
-            </motion.button>
-
-            {/* Modal Download Button */}
-            <motion.button
-              onClick={() => {
-                handleDownload(selectedPhoto);
-              }}
-              disabled={downloadingIds.has(selectedPhoto.id)}
-              className="absolute bottom-3 xs:bottom-4 right-3 xs:right-4 px-4 xs:px-6 py-2 xs:py-3 rounded-lg font-semibold text-white transition-all duration-300 flex items-center gap-2 text-xs xs:text-base"
-              style={{
-                backgroundColor: currentTheme.accentColor,
-                opacity: downloadingIds.has(selectedPhoto.id) ? 0.7 : 1,
-              }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {downloadingIds.has(selectedPhoto.id) ? '⏳ Downloading...' : '⬇️ Download'}
-            </motion.button>
-
-            {/* Photo Info in Modal */}
-            <div className="absolute bottom-3 xs:bottom-4 left-3 xs:left-4 bg-black bg-opacity-60 px-3 xs:px-4 py-2 rounded text-white text-xs xs:text-sm">
-              <p className="text-sm opacity-80">
-                {new Date(selectedPhoto.createdTime).toLocaleDateString()}
-              </p>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
       <style>{`
         @keyframes spin {
           to {

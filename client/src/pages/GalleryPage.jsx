@@ -44,6 +44,17 @@ export const GalleryPage = () => {
     fetchPhotos();
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setSelectedPhoto(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -108,9 +119,7 @@ export const GalleryPage = () => {
           >
             Our Gallery
           </h1>
-          <p className="text-lg" style={{ color: currentTheme.textColor }}>
-            Moments from our special day
-          </p>
+          
         </motion.div>
 
         {/* Loading State */}
@@ -200,7 +209,7 @@ export const GalleryPage = () => {
                       initial={{ scale: 0.8 }}
                       whileHover={{ scale: 1 }}
                     >
-                      <p className="text-white text-lg font-semibold mb-2">{photo.title}</p>
+                      {/* <p className="text-white text-lg font-semibold mb-2">{photo.title}</p> */}
                       <p className="text-white text-sm">Click to view</p>
                     </motion.div>
                   </motion.div>
@@ -221,46 +230,49 @@ export const GalleryPage = () => {
           </motion.div>
         )}
 
-        {/* Info Section */}
-        <motion.div
-          variants={itemVariants}
-          className="mt-16 p-8 rounded-lg text-center"
-          style={{
-            backgroundColor: `${currentTheme.primaryColor}33`,
-            borderTop: `3px solid ${currentTheme.accentColor}`,
-          }}
-        >
-          <h3 className="text-2xl font-serif font-bold mb-3" style={{ color: currentTheme.accentColor }}>
-            📸 Want to share your photos?
-          </h3>
-          <p style={{ color: currentTheme.textColor }}>
-            Upload your photos to our shared gallery. Contact us for access!
-          </p>
-        </motion.div>
+      
       </div>
 
       {/* Lightbox Modal */}
       {selectedPhoto && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: `${currentTheme.primaryColor}ee` }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+          style={{
+            backgroundColor: `${currentTheme.primaryColor}ee`,
+            backdropFilter: 'blur(12px)',
+          }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={() => setSelectedPhoto(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${selectedPhoto.title} photo viewer`}
         >
           <motion.div
-            className="relative max-w-4xl w-full"
+            className="relative w-full max-w-4xl overflow-hidden rounded-2xl p-2 sm:p-3"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              backgroundColor: currentTheme.bgColor,
+              border: `1px solid ${currentTheme.accentColor}99`,
+              boxShadow: `0 24px 80px ${currentTheme.primaryColor}cc, 0 0 0 1px ${currentTheme.accentColor}33`,
+            }}
           >
             {/* Close Button */}
             <motion.button
-              className="absolute -top-12 right-0 text-white text-3xl font-bold"
-              whileHover={{ scale: 1.2 }}
+              type="button"
+              aria-label="Close photo viewer"
+              className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full text-2xl font-light shadow-lg"
+              style={{
+                backgroundColor: `${currentTheme.primaryColor}cc`,
+                color: currentTheme.textColor,
+                border: `1px solid ${currentTheme.accentColor}99`,
+              }}
+              whileHover={{ scale: 1.08, backgroundColor: currentTheme.accentColor, color: currentTheme.primaryColor }}
               whileTap={{ scale: 0.9 }}
               onClick={() => setSelectedPhoto(null)}
             >
@@ -271,7 +283,8 @@ export const GalleryPage = () => {
             <img
               src={selectedPhoto.proxyUrl || `${API_URL}/api/gallery/image/${selectedPhoto.id}`}
               alt={selectedPhoto.alt}
-              className="w-full rounded-lg"
+              className="max-h-[72vh] w-full rounded-xl object-contain"
+              style={{ backgroundColor: `${currentTheme.primaryColor}55` }}
               onError={(e) => {
                 // Fallback to direct Google Drive URL
                 e.target.src = `https://drive.google.com/uc?export=view&id=${selectedPhoto.id}`;
@@ -280,13 +293,17 @@ export const GalleryPage = () => {
 
             {/* Caption */}
             <motion.div
-              className="mt-4 text-center"
+              className="px-3 pb-2 pt-4 text-center sm:px-5 sm:pb-3"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <p className="text-white text-xl font-semibold">{selectedPhoto.title}</p>
-              <p className="text-gray-300 text-sm mt-1">{selectedPhoto.alt}</p>
+              {/* <p className="text-lg font-semibold" style={{ color: currentTheme.accentColor }}>
+                {selectedPhoto.title}
+              </p> */}
+              {/* <p className="mt-1 text-sm" style={{ color: currentTheme.textColor }}>
+                {selectedPhoto.alt}
+              </p> */}
             </motion.div>
           </motion.div>
         </motion.div>
