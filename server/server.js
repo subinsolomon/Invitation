@@ -1,14 +1,11 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import rsvpRoutes from './routes/rsvp.js';
 import configRoutes from './routes/config.js';
 import galleryRoutes from './routes/gallery.js';
 import guestPhotosRoutes from './routes/guestPhotos.js';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
