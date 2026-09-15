@@ -1,14 +1,14 @@
-// {
-//   "buildCommand": "npm run build",
-//   "outputDirectory": "client/dist",
-//   "installCommand": "npm install",
-//   "env": {
-//     "VITE_API_URL": "https://hopeful-enthusiasm-production-6c0b.up.railway.app"
-//   },
-//   "rewrites": [
-//     {
-//       "source": "/(.*)",
-//       "destination": "/index.html"
-//     }
-//   ]
-// }
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "client/dist",
+  "installCommand": "npm install",
+  "env": {
+    "VITE_API_URL": "https://hopeful-enthusiasm-production-6c0b.up.railway.app"
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
