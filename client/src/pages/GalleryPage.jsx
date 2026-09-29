@@ -285,7 +285,7 @@ export const GalleryPage = () => {
 
             {/* Image */}
             <img
-              src={selectedPhoto.proxyUrl || `${API_URL}/api/gallery/image/${selectedPhoto.id}`}
+              src={getApiUrl(selectedPhoto.proxyUrl || `/api/gallery/image/${selectedPhoto.id}`)}
               alt={selectedPhoto.alt}
               className="max-h-[72vh] w-full rounded-xl object-contain"
               style={{ backgroundColor: `${currentTheme.primaryColor}55` }}
