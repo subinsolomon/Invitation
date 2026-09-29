@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -106,17 +106,18 @@ export const GalleryPage = () => {
 
   return (
     <motion.div
-      className="min-h-screen py-20"
+      className="min-h-screen px-4 py-16 sm:px-6 sm:py-24"
       style={{ backgroundColor: currentTheme.bgColor }}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <motion.div variants={itemVariants} className="text-center mb-16">
+        <motion.div variants={itemVariants} className="mb-12 max-w-2xl">
+          <p className="eyebrow mb-4">Moments in time</p>
           <h1
-            className="text-5xl md:text-6xl font-serif font-bold mb-4"
+            className="mb-4 text-4xl font-serif font-bold sm:text-6xl"
             style={{ color: currentTheme.accentColor }}
           >
             Our Gallery
@@ -236,6 +237,7 @@ export const GalleryPage = () => {
       </div>
 
       {/* Lightbox Modal */}
+      <AnimatePresence>
       {selectedPhoto && (
         <motion.div
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
@@ -310,6 +312,7 @@ export const GalleryPage = () => {
           </motion.div>
         </motion.div>
       )}
+      </AnimatePresence>
     </motion.div>
   );
 };

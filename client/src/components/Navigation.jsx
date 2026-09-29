@@ -1,14 +1,31 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 
 export const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showMenuHint, setShowMenuHint] = useState(() => {
+    try {
+      return sessionStorage.getItem('mobile-menu-hint-dismissed') !== 'true';
+    } catch {
+      return true;
+    }
+  });
   const location = useLocation();
-  const { theme, switchTheme, availableThemes, currentTheme } = useTheme();
+  const { currentTheme } = useTheme();
 
   const isActive = (path) => location.pathname === path;
+
+  const handleMenuToggle = () => {
+    setIsOpen((open) => !open);
+    setShowMenuHint(false);
+    try {
+      sessionStorage.setItem('mobile-menu-hint-dismissed', 'true');
+    } catch {
+      // The hint remains dismissed for this component instance if storage is unavailable.
+    }
+  };
 
   const navVariants = {
     hidden: { opacity: 0, y: -20 },
@@ -26,6 +43,32 @@ export const Navigation = () => {
     },
   };
 
+  const mobileMenuVariants = {
+    hidden: { opacity: 0, height: 0 },
+    visible: {
+      opacity: 1,
+      height: 'auto',
+      transition: {
+        duration: 0.32,
+        ease: [0.22, 1, 0.36, 1],
+        when: 'beforeChildren',
+        staggerChildren: 0.07,
+        delayChildren: 0.04,
+      },
+    },
+    exit: {
+      opacity: 0,
+      height: 0,
+      transition: { duration: 0.2, when: 'afterChildren', staggerChildren: 0.03, staggerDirection: -1 },
+    },
+  };
+
+  const mobileLinkVariants = {
+    hidden: { opacity: 0, x: 14 },
+    visible: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 360, damping: 28 } },
+    exit: { opacity: 0, x: 8, transition: { duration: 0.12 } },
+  };
+
   const navLinks = [
     { path: '/', label: 'Home' },
     { path: '/gallery', label: 'Gallery' },
@@ -35,11 +78,11 @@ export const Navigation = () => {
 
   return (
     <motion.nav
-      className="sticky top-0 z-50 backdrop-blur-lg"
+      className="sticky top-0 z-50 border-b backdrop-blur-xl"
       style={{
-        background: `linear-gradient(135deg, ${currentTheme.primaryColor}ee 0%, ${currentTheme.primaryColor}cc 100%)`,
-        borderBottom: `3px solid ${currentTheme.accentColor}`,
-        boxShadow: `0 8px 32px ${currentTheme.accentColor}33`,
+        backgroundColor: `${currentTheme.primaryColor}dd`,
+        borderColor: `${currentTheme.accentColor}44`,
+        boxShadow: `0 12px 32px ${currentTheme.primaryColor}33`,
       }}
       variants={navVariants}
       initial="hidden"
@@ -54,8 +97,8 @@ export const Navigation = () => {
           >
             <motion.div
               className="text-2xl xs:text-3xl sm:text-4xl"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity }}
+              animate={{ y: [0, -3, 0], rotate: [0, 4, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
             >
               💒
             </motion.div>
@@ -100,28 +143,8 @@ export const Navigation = () => {
 
           {/* Right Section */}
           <div className="hidden md:flex items-center gap-2 lg:gap-4 flex-shrink-0">
-            {/* Theme Selector - Modern */}
-            <div className="flex gap-1 lg:gap-2 bg-opacity-20 px-2 lg:px-3 py-1 rounded-full border" style={{ borderColor: currentTheme.accentColor }}>
-              {availableThemes.map((t) => (
-                <motion.button
-                  key={t}
-                  onClick={() => switchTheme(t)}
-                  className={`px-2 lg:px-3 py-1 rounded-full text-xs lg:text-sm font-semibold capitalize transition-all whitespace-nowrap`}
-                  style={{
-                    backgroundColor: theme === t ? currentTheme.accentColor : 'transparent',
-                    color: theme === t ? currentTheme.primaryColor : currentTheme.textColor,
-                  }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {t === 'dark' ? '🌙' : '☀️'} <span className="hidden sm:inline">{t}</span>
-                </motion.button>
-              ))}
-            </div>
-
             {/* RSVP Button - Highlighted */}
-            <motion.a
-              href="/rsvp"
+            <motion.div
               className="px-4 lg:px-6 py-2 rounded-lg font-semibold flex items-center gap-2 text-sm lg:text-base whitespace-nowrap"
               style={{
                 backgroundColor: currentTheme.accentColor,
@@ -131,89 +154,106 @@ export const Navigation = () => {
               whileHover={{ scale: 1.05, boxShadow: `0 8px 25px ${currentTheme.accentColor}99` }}
               whileTap={{ scale: 0.95 }}
             >
-              ✉️ <span className="hidden sm:inline">RSVP</span>
-            </motion.a>
+              <Link
+                to="/rsvp"
+                className="flex items-center gap-2 px-4 py-2 lg:px-6 font-semibold text-sm lg:text-base whitespace-nowrap"
+                style={{ color: currentTheme.primaryColor }}
+              >
+                ✉️ <span className="hidden sm:inline">RSVP</span>
+              </Link>
+            </motion.div>
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 rounded-lg flex-shrink-0 ml-2"
-            style={{ color: currentTheme.textColor }}
-            aria-label="Toggle menu"
-          >
-            <motion.svg
-              className="w-5 h-5 xs:w-6 xs:h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              animate={isOpen ? { rotate: 90 } : { rotate: 0 }}
+          <div className="relative md:hidden flex-shrink-0 ml-2">
+            <button
+              onClick={handleMenuToggle}
+              className="p-2 rounded-lg"
+              style={{ color: currentTheme.textColor }}
+              aria-label="Toggle menu"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </motion.svg>
-          </button>
+              <motion.svg
+                className="w-5 h-5 xs:w-6 xs:h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                animate={isOpen ? { rotate: 90 } : { rotate: 0 }}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </motion.svg>
+            </button>
+            <AnimatePresence>
+              {showMenuHint && (
+                <motion.div
+                  className="absolute right-0 top-full mt-2 whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-semibold shadow-xl"
+                  style={{
+                    color: currentTheme.textColor,
+                    backgroundColor: currentTheme.secondaryColor,
+                    borderColor: `${currentTheme.accentColor}88`,
+                  }}
+                  initial={{ opacity: 0, y: -6, scale: 0.95 }}
+                  animate={{ opacity: 1, y: [0, 3, 0], scale: 1 }}
+                  exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                  transition={{ duration: 0.35, y: { duration: 1.4, repeat: Infinity, ease: 'easeInOut' } }}
+                  aria-hidden="true"
+                >
+                  <span
+                    className="inline-block w-1.5 h-1.5 rounded-full mr-2 align-middle"
+                    style={{ backgroundColor: currentTheme.accentColor }}
+                  />
+                  Tap to explore
+                  <span
+                    className="absolute right-4 bottom-full w-0 h-0 border-x-[6px] border-x-transparent border-b-[6px]"
+                    style={{ borderBottomColor: currentTheme.secondaryColor }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Mobile Menu */}
-        {isOpen && (
+        <AnimatePresence>
+          {isOpen && (
           <motion.div
             className="md:hidden pb-4 space-y-2 max-h-96 overflow-y-auto"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
+            variants={mobileMenuVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
           >
             {navLinks.map((link) => (
+              <motion.div key={link.path} variants={mobileLinkVariants} whileHover={{ x: 4 }}>
+                <Link
+                  to={link.path}
+                  className="block px-4 py-3 rounded-lg font-medium text-sm xs:text-base"
+                  style={{
+                    backgroundColor: isActive(link.path) ? `${currentTheme.accentColor}33` : 'transparent',
+                    color: isActive(link.path) ? currentTheme.accentColor : currentTheme.textColor,
+                  }}
+                  onClick={() => setIsOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              </motion.div>
+            ))}
+            
+            <motion.div variants={mobileLinkVariants} whileHover={{ x: 4 }}>
               <Link
-                key={link.path}
-                to={link.path}
-                className="block px-4 py-3 rounded-lg font-medium text-sm xs:text-base"
+                to="/rsvp"
+                className="block px-4 py-3 rounded-lg font-semibold text-center text-sm xs:text-base"
                 style={{
-                  backgroundColor: isActive(link.path) ? `${currentTheme.accentColor}33` : 'transparent',
-                  color: isActive(link.path) ? currentTheme.accentColor : currentTheme.textColor,
+                  backgroundColor: currentTheme.accentColor,
+                  color: currentTheme.primaryColor,
                 }}
                 onClick={() => setIsOpen(false)}
               >
-                {link.label}
+                ✉️ RSVP
               </Link>
-            ))}
-            
-            {/* Mobile Theme Selector */}
-            <div className="px-4 py-3 border-t" style={{ borderColor: `${currentTheme.accentColor}33` }}>
-              <p className="text-xs font-semibold mb-2" style={{ color: currentTheme.textColor, opacity: 0.7 }}>Theme:</p>
-              <div className="flex gap-2">
-                {availableThemes.map((t) => (
-                  <motion.button
-                    key={t}
-                    onClick={() => {
-                      switchTheme(t);
-                      setIsOpen(false);
-                    }}
-                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold capitalize transition-all`}
-                    style={{
-                      backgroundColor: theme === t ? currentTheme.accentColor : `${currentTheme.accentColor}33`,
-                      color: theme === t ? currentTheme.primaryColor : currentTheme.textColor,
-                    }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {t === 'dark' ? '🌙' : '☀️'} {t}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-
-            <Link
-              to="/rsvp"
-              className="block px-4 py-3 rounded-lg font-semibold text-center text-sm xs:text-base"
-              style={{
-                backgroundColor: currentTheme.accentColor,
-                color: currentTheme.primaryColor,
-              }}
-              onClick={() => setIsOpen(false)}
-            >
-              ✉️ RSVP
-            </Link>
+            </motion.div>
           </motion.div>
-        )}
+          )}
+        </AnimatePresence>
       </div>
     </motion.nav>
   );
