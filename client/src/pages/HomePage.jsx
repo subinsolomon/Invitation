@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import Countdown from '../components/Countdown';
@@ -9,6 +9,10 @@ import { configService } from '../services/api';
 
 export const HomePage = () => {
   const { currentTheme } = useTheme();
+  const prefersReducedMotion = useReducedMotion();
+  const { scrollY } = useScroll();
+  const heroImageY = useTransform(scrollY, [0, 700], [0, 110]);
+  const heroImageScale = useTransform(scrollY, [0, 700], [1, 1.12]);
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -67,14 +71,22 @@ export const HomePage = () => {
       className="relative min-h-screen overflow-hidden"
       style={{
         backgroundColor: currentTheme.bgColor,
-        backgroundImage: `url('https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&h=800&fit=crop')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center 35%',
       }}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          y: prefersReducedMotion ? 0 : heroImageY,
+          scale: prefersReducedMotion ? 1 : heroImageScale,
+          backgroundImage: "url('https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&h=800&fit=crop')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 35%',
+        }}
+        aria-hidden="true"
+      />
       <div
         className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/45 to-black/90"
         style={{

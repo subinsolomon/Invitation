@@ -13,7 +13,7 @@ export const Navigation = () => {
     }
   });
   const location = useLocation();
-  const { theme, switchTheme, availableThemes, currentTheme } = useTheme();
+  const { currentTheme } = useTheme();
 
   const isActive = (path) => location.pathname === path;
 
@@ -41,6 +41,32 @@ export const Navigation = () => {
       scale: 1.05,
       color: currentTheme.accentColor,
     },
+  };
+
+  const mobileMenuVariants = {
+    hidden: { opacity: 0, height: 0 },
+    visible: {
+      opacity: 1,
+      height: 'auto',
+      transition: {
+        duration: 0.32,
+        ease: [0.22, 1, 0.36, 1],
+        when: 'beforeChildren',
+        staggerChildren: 0.07,
+        delayChildren: 0.04,
+      },
+    },
+    exit: {
+      opacity: 0,
+      height: 0,
+      transition: { duration: 0.2, when: 'afterChildren', staggerChildren: 0.03, staggerDirection: -1 },
+    },
+  };
+
+  const mobileLinkVariants = {
+    hidden: { opacity: 0, x: 14 },
+    visible: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 360, damping: 28 } },
+    exit: { opacity: 0, x: 8, transition: { duration: 0.12 } },
   };
 
   const navLinks = [
@@ -117,25 +143,6 @@ export const Navigation = () => {
 
           {/* Right Section */}
           <div className="hidden md:flex items-center gap-2 lg:gap-4 flex-shrink-0">
-            {/* Theme Selector - Modern */}
-            <div className="flex gap-1 lg:gap-2 bg-opacity-20 px-2 lg:px-3 py-1 rounded-full border" style={{ borderColor: currentTheme.accentColor }}>
-              {availableThemes.map((t) => (
-                <motion.button
-                  key={t}
-                  onClick={() => switchTheme(t)}
-                  className={`px-2 lg:px-3 py-1 rounded-full text-xs lg:text-sm font-semibold capitalize transition-all whitespace-nowrap`}
-                  style={{
-                    backgroundColor: theme === t ? currentTheme.accentColor : 'transparent',
-                    color: theme === t ? currentTheme.primaryColor : currentTheme.textColor,
-                  }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {t === 'dark' ? '🌙' : '☀️'} <span className="hidden sm:inline">{t}</span>
-                </motion.button>
-              ))}
-            </div>
-
             {/* RSVP Button - Highlighted */}
             <motion.div
               className="px-4 lg:px-6 py-2 rounded-lg font-semibold flex items-center gap-2 text-sm lg:text-base whitespace-nowrap"
@@ -181,7 +188,7 @@ export const Navigation = () => {
                   className="absolute right-0 top-full mt-2 whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-semibold shadow-xl"
                   style={{
                     color: currentTheme.textColor,
-                    backgroundColor: currentTheme.primaryColor,
+                    backgroundColor: currentTheme.secondaryColor,
                     borderColor: `${currentTheme.accentColor}88`,
                   }}
                   initial={{ opacity: 0, y: -6, scale: 0.95 }}
@@ -197,7 +204,7 @@ export const Navigation = () => {
                   Tap to explore
                   <span
                     className="absolute right-4 bottom-full w-0 h-0 border-x-[6px] border-x-transparent border-b-[6px]"
-                    style={{ borderBottomColor: currentTheme.primaryColor }}
+                    style={{ borderBottomColor: currentTheme.secondaryColor }}
                   />
                 </motion.div>
               )}
@@ -210,60 +217,40 @@ export const Navigation = () => {
           {isOpen && (
           <motion.div
             className="md:hidden pb-4 space-y-2 max-h-96 overflow-y-auto"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
+            variants={mobileMenuVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
           >
             {navLinks.map((link) => (
+              <motion.div key={link.path} variants={mobileLinkVariants} whileHover={{ x: 4 }}>
+                <Link
+                  to={link.path}
+                  className="block px-4 py-3 rounded-lg font-medium text-sm xs:text-base"
+                  style={{
+                    backgroundColor: isActive(link.path) ? `${currentTheme.accentColor}33` : 'transparent',
+                    color: isActive(link.path) ? currentTheme.accentColor : currentTheme.textColor,
+                  }}
+                  onClick={() => setIsOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              </motion.div>
+            ))}
+            
+            <motion.div variants={mobileLinkVariants} whileHover={{ x: 4 }}>
               <Link
-                key={link.path}
-                to={link.path}
-                className="block px-4 py-3 rounded-lg font-medium text-sm xs:text-base"
+                to="/rsvp"
+                className="block px-4 py-3 rounded-lg font-semibold text-center text-sm xs:text-base"
                 style={{
-                  backgroundColor: isActive(link.path) ? `${currentTheme.accentColor}33` : 'transparent',
-                  color: isActive(link.path) ? currentTheme.accentColor : currentTheme.textColor,
+                  backgroundColor: currentTheme.accentColor,
+                  color: currentTheme.primaryColor,
                 }}
                 onClick={() => setIsOpen(false)}
               >
-                {link.label}
+                ✉️ RSVP
               </Link>
-            ))}
-            
-            {/* Mobile Theme Selector */}
-            <div className="px-4 py-3 border-t" style={{ borderColor: `${currentTheme.accentColor}33` }}>
-              <p className="text-xs font-semibold mb-2" style={{ color: currentTheme.textColor, opacity: 0.7 }}>Theme:</p>
-              <div className="flex gap-2">
-                {availableThemes.map((t) => (
-                  <motion.button
-                    key={t}
-                    onClick={() => {
-                      switchTheme(t);
-                      setIsOpen(false);
-                    }}
-                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold capitalize transition-all`}
-                    style={{
-                      backgroundColor: theme === t ? currentTheme.accentColor : `${currentTheme.accentColor}33`,
-                      color: theme === t ? currentTheme.primaryColor : currentTheme.textColor,
-                    }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {t === 'dark' ? '🌙' : '☀️'} {t}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-
-            <Link
-              to="/rsvp"
-              className="block px-4 py-3 rounded-lg font-semibold text-center text-sm xs:text-base"
-              style={{
-                backgroundColor: currentTheme.accentColor,
-                color: currentTheme.primaryColor,
-              }}
-              onClick={() => setIsOpen(false)}
-            >
-              ✉️ RSVP
-            </Link>
+            </motion.div>
           </motion.div>
           )}
         </AnimatePresence>

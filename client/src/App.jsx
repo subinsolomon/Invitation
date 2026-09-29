@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import Navigation from './components/Navigation';
 import HomePage from './pages/HomePage';
@@ -13,6 +13,7 @@ import './index.css';
 function AppContent() {
   const { currentTheme } = useTheme();
   const location = useLocation();
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <div
@@ -24,10 +25,10 @@ function AppContent() {
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.99, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -10, scale: 1.01, filter: 'blur(6px)' }}
+            transition={{ duration: prefersReducedMotion ? 0.15 : 0.45, ease: [0.22, 1, 0.36, 1] }}
           >
             <Routes location={location}>
               <Route path="/" element={<HomePage />} />
