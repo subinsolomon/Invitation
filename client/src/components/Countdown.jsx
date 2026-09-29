@@ -45,7 +45,7 @@ export const Countdown = ({ weddingDate }) => {
 
   return (
     <motion.div
-      className="flex justify-center gap-8 py-12"
+      className="grid grid-cols-4 gap-2 sm:gap-3"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -58,20 +58,20 @@ export const Countdown = ({ weddingDate }) => {
       ].map((item) => (
         <motion.div
           key={item.label}
-          className="flex flex-col items-center"
+          className="flex min-w-0 flex-col items-center"
           variants={itemVariants}
         >
           <motion.div
-            className="text-4xl md:text-5xl font-bold font-serif mb-2 px-4 py-3 rounded-lg"
+            className="flex aspect-square w-full items-center justify-center rounded-2xl border text-2xl font-bold font-serif sm:text-3xl"
             style={{
-              backgroundColor: currentTheme.primaryColor,
-              color: currentTheme.secondaryColor,
-              border: `2px solid ${currentTheme.accentColor}`,
+              backgroundColor: `${currentTheme.accentColor}18`,
+              color: currentTheme.accentColor,
+              borderColor: `${currentTheme.accentColor}55`,
             }}
           >
             {String(item.value).padStart(2, '0')}
           </motion.div>
-          <p className="text-sm md:text-base uppercase tracking-wider" style={{ color: currentTheme.textColor }}>
+          <p className="mt-2 text-[0.6rem] uppercase tracking-[0.16em] opacity-65 sm:text-xs" style={{ color: currentTheme.textColor }}>
             {item.label}
           </p>
         </motion.div>

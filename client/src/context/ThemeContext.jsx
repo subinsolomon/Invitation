@@ -13,7 +13,12 @@ export const useTheme = () => {
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('wedding-theme');
-    return saved ? JSON.parse(saved) : 'dark';
+    try {
+      const parsed = saved ? JSON.parse(saved) : 'dark';
+      return parsed === 'light' || parsed === 'dark' ? parsed : 'dark';
+    } catch {
+      return 'dark';
+    }
   });
 
   // ===== CUSTOMIZE THEMES HERE =====
@@ -72,6 +77,7 @@ export const ThemeProvider = ({ children }) => {
 
   useEffect(() => {
     localStorage.setItem('wedding-theme', JSON.stringify(theme));
+    document.documentElement.dataset.theme = theme;
   }, [theme]);
 
   const switchTheme = (newTheme) => {

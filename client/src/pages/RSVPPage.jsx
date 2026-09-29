@@ -132,15 +132,16 @@ export const RSVPPage = () => {
 
   return (
     <motion.div
-      className="min-h-screen py-8 xs:py-12 sm:py-16 md:py-20 px-3 xs:px-4"
+      className="min-h-screen px-4 py-16 sm:px-6 sm:py-24"
       style={{ backgroundColor: currentTheme.bgColor }}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      <div className="max-w-2xl mx-auto">
-        <motion.div variants={itemVariants} className="text-center mb-8 xs:mb-10 sm:mb-12">
-          <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-serif font-bold mb-3 xs:mb-4" style={{ color: currentTheme.accentColor }}>
+      <div className="mx-auto max-w-2xl">
+        <motion.div variants={itemVariants} className="mb-10 max-w-xl">
+          <p className="eyebrow mb-4">Your seat at the table</p>
+          <h1 className="mb-4 text-4xl font-serif font-bold sm:text-6xl" style={{ color: currentTheme.accentColor }}>
             RSVP
           </h1>
           <p className="text-sm xs:text-base sm:text-lg" style={{ color: currentTheme.textColor }}>
@@ -179,10 +180,9 @@ export const RSVPPage = () => {
 
         <motion.form
           onSubmit={handleSubmit}
-          className="p-4 xs:p-6 sm:p-8 rounded-lg space-y-4 xs:space-y-5 sm:space-y-6"
+          className="glass-surface space-y-5 rounded-3xl p-5 sm:space-y-6 sm:p-8"
           style={{
-            backgroundColor: `${currentTheme.primaryColor}33`,
-            border: `2px solid ${currentTheme.accentColor}`,
+            borderColor: `${currentTheme.accentColor}44`,
           }}
           variants={containerVariants}
         >
