@@ -119,23 +119,24 @@ export const GuestPhotoPage = () => {
 
   return (
     <motion.div
-      className="min-h-screen py-8 xs:py-12 sm:py-16 md:py-20 px-3 xs:px-4"
+      className="min-h-screen px-4 py-16 sm:px-6 sm:py-24"
       style={{ backgroundColor: currentTheme.bgColor }}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <motion.div className="text-center mb-8 xs:mb-10 sm:mb-12" variants={itemVariants}>
+        <motion.div className="mb-12 max-w-2xl" variants={itemVariants}>
+          <p className="eyebrow mb-4">Shared memories</p>
           <h1
-            className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-bold mb-3 xs:mb-4"
+            className="mb-4 text-4xl font-bold sm:text-6xl"
             style={{ color: currentTheme.accentColor }}
           >
             Guest Photos
           </h1>
           <p
-            className="text-sm xs:text-base sm:text-lg max-w-2xl mx-auto"
+            className="max-w-2xl text-base leading-7 opacity-75 sm:text-lg"
             style={{ color: currentTheme.textColor }}
           >
             Cherished moments from our celebration. Feel free to download and share your favorite memories!
@@ -185,7 +186,7 @@ export const GuestPhotoPage = () => {
             {photos.map((photo) => (
               <motion.div
                 key={photo.id}
-                className="group relative overflow-hidden rounded-lg shadow-lg"
+                className="glass-surface group relative overflow-hidden rounded-2xl"
                 style={{ backgroundColor: currentTheme.secondaryColor }}
                 variants={photoVariants}
                 whileHover="hover"

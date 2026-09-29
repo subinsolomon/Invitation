@@ -11,6 +11,8 @@ build/
 
 # Environment variables
 .env
+client/.env
+server/.env
 .env.local
 .env.*.local
 

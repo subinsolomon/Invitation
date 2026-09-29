@@ -62,18 +62,19 @@ export const CeremonyPage = () => {
 
   return (
     <motion.div
-      className="min-h-screen py-20"
+      className="min-h-screen px-4 py-16 sm:px-6 sm:py-24"
       style={{ backgroundColor: currentTheme.bgColor }}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div variants={itemVariants} className="text-center mb-16">
-          <h1 className="text-5xl font-serif font-bold mb-4" style={{ color: currentTheme.accentColor }}>
+      <div className="mx-auto max-w-5xl">
+        <motion.div variants={itemVariants} className="mb-12 max-w-2xl">
+          <p className="eyebrow mb-4">The celebration</p>
+          <h1 className="mb-4 text-4xl font-serif font-bold sm:text-6xl" style={{ color: currentTheme.accentColor }}>
             Ceremony Details
           </h1>
-          <p className="text-lg" style={{ color: currentTheme.textColor }}>
+          <p className="text-base leading-7 opacity-75 sm:text-lg" style={{ color: currentTheme.textColor }}>
             Join us as we celebrate our love
           </p>
         </motion.div>
@@ -82,10 +83,9 @@ export const CeremonyPage = () => {
           {/* Ceremony Info */}
           <motion.div
             variants={itemVariants}
-            className="p-8 rounded-lg"
+            className="glass-surface rounded-3xl p-6 sm:p-8"
             style={{
-              backgroundColor: `${currentTheme.primaryColor}33`,
-              borderLeft: `4px solid ${currentTheme.accentColor}`,
+              borderColor: `${currentTheme.accentColor}44`,
             }}
           >
             <div className="space-y-6">
@@ -145,7 +145,7 @@ export const CeremonyPage = () => {
           {/* Google Maps Embed */}
           <motion.div
             variants={itemVariants}
-            className="rounded-lg overflow-hidden h-96 md:h-auto"
+            className="glass-surface overflow-hidden rounded-3xl h-96 md:h-auto"
             style={{ minHeight: '400px' }}
           >
             {config?.coordinates?.lat && config?.coordinates?.lng ? (
@@ -190,10 +190,9 @@ export const CeremonyPage = () => {
         {/* Additional Info */}
         <motion.div
           variants={itemVariants}
-          className="mt-12 p-8 rounded-lg text-center"
+          className="glass-surface mt-12 rounded-3xl p-8 text-center"
           style={{
-            backgroundColor: `${currentTheme.primaryColor}33`,
-            borderTop: `2px solid ${currentTheme.accentColor}`,
+            borderColor: `${currentTheme.accentColor}44`,
           }}
         >
           <h3 className="text-2xl font-serif font-bold mb-4" style={{ color: currentTheme.accentColor }}>

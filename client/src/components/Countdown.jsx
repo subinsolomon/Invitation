@@ -1,11 +1,12 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useCountdown } from '../hooks/useCountdown';
 import { useTheme } from '../context/ThemeContext';
 
 export const Countdown = ({ weddingDate }) => {
   const { timeLeft, isExpired } = useCountdown(weddingDate);
   const { currentTheme } = useTheme();
+  const prefersReducedMotion = useReducedMotion();
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -45,38 +46,51 @@ export const Countdown = ({ weddingDate }) => {
 
   return (
     <motion.div
-      className="flex justify-center gap-8 py-12"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      {[
-        { label: 'Days', value: timeLeft.days },
-        { label: 'Hours', value: timeLeft.hours },
-        { label: 'Minutes', value: timeLeft.minutes },
-        { label: 'Seconds', value: timeLeft.seconds },
-      ].map((item) => (
-        <motion.div
-          key={item.label}
-          className="flex flex-col items-center"
-          variants={itemVariants}
-        >
+        className="grid w-full grid-cols-4 gap-2 sm:gap-3"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {[
+          { label: 'Days', value: timeLeft.days },
+          { label: 'Hours', value: timeLeft.hours },
+          { label: 'Minutes', value: timeLeft.minutes },
+          { label: 'Seconds', value: timeLeft.seconds },
+        ].map((item) => (
           <motion.div
-            className="text-4xl md:text-5xl font-bold font-serif mb-2 px-4 py-3 rounded-lg"
-            style={{
-              backgroundColor: currentTheme.primaryColor,
-              color: currentTheme.secondaryColor,
-              border: `2px solid ${currentTheme.accentColor}`,
-            }}
+            key={item.label}
+            className="flex min-w-0 flex-col items-center"
+            variants={itemVariants}
           >
-            {String(item.value).padStart(2, '0')}
+            <motion.div
+              className="flex aspect-square w-full items-center justify-center rounded-2xl border text-2xl font-bold font-serif sm:text-3xl"
+              style={{
+                backgroundColor: `${currentTheme.accentColor}18`,
+                color: currentTheme.accentColor,
+                borderColor: `${currentTheme.accentColor}55`,
+              }}
+            >
+              <motion.span
+                key={item.value}
+                initial={{
+                  opacity: 0,
+                  y: prefersReducedMotion ? 0 : 12,
+                  rotateX: prefersReducedMotion ? 0 : -55,
+                }}
+                animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease: 'easeOut' }}
+                className="inline-block"
+                style={{ transformOrigin: 'center' }}
+              >
+                {String(item.value).padStart(2, '0')}
+              </motion.span>
+            </motion.div>
+            <p className="mt-2 text-[0.6rem] uppercase tracking-[0.16em] opacity-65 sm:text-xs" style={{ color: currentTheme.textColor }}>
+              {item.label}
+            </p>
           </motion.div>
-          <p className="text-sm md:text-base uppercase tracking-wider" style={{ color: currentTheme.textColor }}>
-            {item.label}
-          </p>
-        </motion.div>
-      ))}
-    </motion.div>
+        ))}
+      </motion.div>
   );
 };
 

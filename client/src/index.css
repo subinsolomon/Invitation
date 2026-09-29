@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+  --ink: #e8f1f8;
+  --muted-ink: #a8bac9;
+  --canvas: #101c2a;
+  --canvas-deep: #08111b;
+  --surface: rgba(210, 231, 247, 0.075);
+  --surface-strong: rgba(210, 231, 247, 0.13);
+  --line: rgba(203, 225, 242, 0.16);
+  --accent: #79bce3;
+  --accent-soft: rgba(121, 188, 227, 0.16);
+  --shadow: rgba(0, 0, 0, 0.32);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -14,8 +28,15 @@ html {
 
 body {
   font-family: 'Poppins', sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 8%, var(--accent-soft), transparent 28rem),
+    radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.05), transparent 24rem),
+    var(--canvas);
+  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.45s ease, color 0.45s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -24,6 +45,62 @@ h1, h2, h3, h4, h5, h6 {
 
 blockquote {
   font-family: 'Playfair Display', serif;
+}
+
+::selection {
+  color: var(--canvas-deep);
+  background: var(--accent);
+}
+
+a,
+button,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.page-shell {
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100vh - 5rem);
+}
+
+.page-shell::before {
+  content: '';
+  position: fixed;
+  inset: 5rem 0 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 4rem 4rem;
+  mask-image: linear-gradient(to bottom, black, transparent 75%);
+}
+
+.glass-surface {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 1.5rem 4rem var(--shadow);
+  backdrop-filter: blur(1.2rem);
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  line-height: 1.4;
+  text-transform: uppercase;
 }
 
 /* Custom animations */
@@ -42,7 +119,7 @@ blockquote {
 
 /* Smooth transitions */
 a {
-  transition: color 0.3s ease, text-decoration 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
 }
 
 button {
@@ -126,6 +203,19 @@ select {
   }
 }
 
-input:focus, textarea:focus, select:focus {
-  outline: none;
+input:focus, textarea:focus, select:focus { outline: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
