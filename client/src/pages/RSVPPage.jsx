@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { rsvpService } from '../services/api';
 
 export const RSVPPage = () => {
   const { currentTheme } = useTheme();
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,17 +23,17 @@ export const RSVPPage = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
+        staggerChildren: prefersReducedMotion ? 0 : 0.1,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6 },
+      transition: { duration: prefersReducedMotion ? 0.15 : 0.6 },
     },
   };
 
@@ -132,7 +133,7 @@ export const RSVPPage = () => {
 
   return (
     <motion.div
-      className="min-h-screen px-4 py-16 sm:px-6 sm:py-24"
+      className="min-h-screen px-4 pt-8 pb-8 sm:px-6 sm:pt-12 sm:pb-12"
       style={{ backgroundColor: currentTheme.bgColor }}
       variants={containerVariants}
       initial="hidden"
@@ -191,8 +192,24 @@ export const RSVPPage = () => {
             <label className="block text-xs xs:text-sm font-semibold mb-3 xs:mb-4" style={{ color: currentTheme.textColor }}>
               Will you be attending? *
             </label>
-            <div className="space-y-2 xs:space-y-3">
-              <div className="flex items-center">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <motion.label
+                htmlFor="yes"
+                className="relative flex min-h-20 cursor-pointer items-center gap-3 overflow-hidden rounded-xl border p-4 transition-colors"
+                style={{
+                  borderColor: formData.attendance === 'yes' ? currentTheme.accentColor : `${currentTheme.accentColor}44`,
+                  color: currentTheme.textColor,
+                }}
+                whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
+              >
+                {formData.attendance === 'yes' && (
+                  <motion.span
+                    layoutId="attendanceSelectionGlow"
+                    className="absolute inset-0 -z-0 rounded-xl bg-sky-300/10 shadow-[inset_0_0_28px_rgba(56,189,248,0.12)]"
+                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                  />
+                )}
                 <input
                   type="radio"
                   id="yes"
@@ -200,14 +217,30 @@ export const RSVPPage = () => {
                   value="yes"
                   checked={formData.attendance === 'yes'}
                   onChange={handleChange}
-                  className="w-4 h-4 xs:w-5 xs:h-5"
+                  className="relative z-10 h-5 w-5 shrink-0"
                   style={{ accentColor: currentTheme.accentColor }}
                 />
-                <label htmlFor="yes" className="ml-2 xs:ml-3 text-sm xs:text-base" style={{ color: currentTheme.textColor }}>
+                <span className="relative z-10 text-sm xs:text-base">
                   Yes, I will attend! 🎉
-                </label>
-              </div>
-              <div className="flex items-center">
+                </span>
+              </motion.label>
+              <motion.label
+                htmlFor="no"
+                className="relative flex min-h-20 cursor-pointer items-center gap-3 overflow-hidden rounded-xl border p-4 transition-colors"
+                style={{
+                  borderColor: formData.attendance === 'no' ? currentTheme.accentColor : `${currentTheme.accentColor}44`,
+                  color: currentTheme.textColor,
+                }}
+                whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
+              >
+                {formData.attendance === 'no' && (
+                  <motion.span
+                    layoutId="attendanceSelectionGlow"
+                    className="absolute inset-0 -z-0 rounded-xl bg-sky-300/10 shadow-[inset_0_0_28px_rgba(56,189,248,0.12)]"
+                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                  />
+                )}
                 <input
                   type="radio"
                   id="no"
@@ -215,13 +248,13 @@ export const RSVPPage = () => {
                   value="no"
                   checked={formData.attendance === 'no'}
                   onChange={handleChange}
-                  className="w-4 h-4 xs:w-5 xs:h-5"
+                  className="relative z-10 h-5 w-5 shrink-0"
                   style={{ accentColor: currentTheme.accentColor }}
                 />
-                <label htmlFor="no" className="ml-2 xs:ml-3 text-sm xs:text-base" style={{ color: currentTheme.textColor }}>
+                <span className="relative z-10 text-sm xs:text-base">
                   Sorry, I cannot attend 😢
-                </label>
-              </div>
+                </span>
+              </motion.label>
             </div>
           </motion.div>
 
@@ -316,8 +349,8 @@ export const RSVPPage = () => {
                 opacity: loading ? 0.6 : 1,
                 cursor: loading ? 'not-allowed' : 'pointer',
               }}
-              whileHover={{ scale: loading ? 1 : 1.02 }}
-              whileTap={{ scale: loading ? 1 : 0.98 }}
+              whileHover={prefersReducedMotion ? undefined : { scale: loading ? 1 : 1.02 }}
+              whileTap={prefersReducedMotion ? undefined : { scale: loading ? 1 : 0.98 }}
               variants={itemVariants}
             >
               {loading ? 'Submitting...' : 'Submit RSVP'}

@@ -1,9 +1,10 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 
-export const WeddingNames = ({ brideName = 'Bride', groomName = 'Groom' }) => {
+export const WeddingNames = ({ brideName = 'Bride', groomName = 'Groom', isVisible = true }) => {
   const { currentTheme } = useTheme();
+  const prefersReducedMotion = useReducedMotion();
 
   // Split names into characters for animation
   const brideChars = brideName.split('');
@@ -15,8 +16,8 @@ export const WeddingNames = ({ brideName = 'Bride', groomName = 'Groom' }) => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.05,
-        delayChildren: 0.2,
+        staggerChildren: prefersReducedMotion ? 0 : 0.05,
+        delayChildren: prefersReducedMotion ? 0 : 0.2,
       },
     },
   };
@@ -25,15 +26,15 @@ export const WeddingNames = ({ brideName = 'Bride', groomName = 'Groom' }) => {
   const charVariants = {
     hidden: {
       opacity: 0,
-      y: 20,
-      rotateX: 90,
+      y: prefersReducedMotion ? 0 : 20,
+      rotateX: prefersReducedMotion ? 0 : 90,
     },
     visible: {
       opacity: 1,
       y: 0,
       rotateX: 0,
       transition: {
-        duration: 0.6,
+        duration: prefersReducedMotion ? 0.15 : 0.6,
         ease: 'easeOut',
       },
     },
@@ -45,15 +46,15 @@ export const WeddingNames = ({ brideName = 'Bride', groomName = 'Groom' }) => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.02,
-        delayChildren: 0.1,
+        staggerChildren: prefersReducedMotion ? 0 : 0.02,
+        delayChildren: prefersReducedMotion ? 0 : 0.1,
       },
     },
     hover: {
-      y: [-5, 5, -5],
+      y: prefersReducedMotion ? 0 : [-5, 5, -5],
       transition: {
-        duration: 2,
-        repeat: Infinity,
+        duration: prefersReducedMotion ? 0 : 2,
+        repeat: prefersReducedMotion ? 0 : Infinity,
         ease: 'easeInOut',
       },
     },
@@ -117,22 +118,22 @@ export const WeddingNames = ({ brideName = 'Bride', groomName = 'Groom' }) => {
     <motion.div
       className="flex flex-col items-center justify-center gap-4 xs:gap-6 sm:gap-8 md:gap-10 lg:gap-12 py-8 xs:py-12 sm:py-16 md:py-20 lg:py-24 px-3 xs:px-4"
       initial="hidden"
-      animate="visible"
+      animate={isVisible ? 'visible' : 'hidden'}
     >
       {/* Bride's Name - Character by Character Animation */}
       <motion.div
         className="flex flex-wrap justify-center"
         variants={nameContainerVariants}
         initial="hidden"
-        animate="visible"
+        animate={isVisible ? 'visible' : 'hidden'}
         whileHover="hover"
       >
         {brideChars.map((char, index) => (
           <motion.span
             key={`bride-${index}`}
-            className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold inline-block"
+            className="wedding-name-shimmer text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold inline-block"
             style={{
-              color: currentTheme.accentColor,
+              backgroundImage: `linear-gradient(100deg, ${currentTheme.accentColor} 15%, #f8fafc 48%, ${currentTheme.accentColor} 82%)`,
               textShadow: `0 10px 30px ${currentTheme.accentColor}40, 0 0 20px ${currentTheme.accentColor}60`,
               letterSpacing: '0.02em',
               perspective: '1000px',
@@ -149,7 +150,7 @@ export const WeddingNames = ({ brideName = 'Bride', groomName = 'Groom' }) => {
         className="flex items-center justify-center gap-2 xs:gap-3 sm:gap-4 md:gap-6 lg:gap-8"
         variants={containerVariants}
         initial="hidden"
-        animate="visible"
+        animate={isVisible ? 'visible' : 'hidden'}
       >
         {/* Left Decorative ornament */}
         <motion.div
@@ -194,15 +195,15 @@ export const WeddingNames = ({ brideName = 'Bride', groomName = 'Groom' }) => {
         className="flex flex-wrap justify-center"
         variants={nameContainerVariants}
         initial="hidden"
-        animate="visible"
+        animate={isVisible ? 'visible' : 'hidden'}
         whileHover="hover"
       >
         {groomChars.map((char, index) => (
           <motion.span
             key={`groom-${index}`}
-            className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold inline-block"
+            className="wedding-name-shimmer text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold inline-block"
             style={{
-              color: currentTheme.accentColor,
+              backgroundImage: `linear-gradient(100deg, ${currentTheme.accentColor} 15%, #f8fafc 48%, ${currentTheme.accentColor} 82%)`,
               textShadow: `0 10px 30px ${currentTheme.accentColor}40, 0 0 20px ${currentTheme.accentColor}60`,
               letterSpacing: '0.02em',
               perspective: '1000px',

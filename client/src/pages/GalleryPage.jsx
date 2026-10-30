@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -8,6 +9,7 @@ const getApiUrl = (path) => (path?.startsWith('http') ? path : `${API_URL}${path
 
 export const GalleryPage = () => {
   const { currentTheme } = useTheme();
+  const prefersReducedMotion = useReducedMotion();
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -62,51 +64,52 @@ export const GalleryPage = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
+        staggerChildren: prefersReducedMotion ? 0 : 0.1,
+        delayChildren: prefersReducedMotion ? 0 : 0.2,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6 },
+      transition: { duration: prefersReducedMotion ? 0.15 : 0.6 },
     },
   };
 
   const photoVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
+    hidden: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.94 },
     visible: {
       opacity: 1,
+      y: 0,
       scale: 1,
-      transition: { duration: 0.5 },
+      transition: { duration: prefersReducedMotion ? 0.18 : 0.5 },
     },
-    hover: {
+    hover: prefersReducedMotion ? {} : {
       scale: 1.05,
       transition: { duration: 0.3 },
     },
   };
 
   const modalVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
+    hidden: { opacity: 0, scale: prefersReducedMotion ? 1 : 0.96 },
     visible: {
       opacity: 1,
       scale: 1,
-      transition: { duration: 0.3 },
+      transition: { duration: prefersReducedMotion ? 0.15 : 0.3 },
     },
     exit: {
       opacity: 0,
       scale: 0.8,
-      transition: { duration: 0.3 },
+      transition: { duration: prefersReducedMotion ? 0.15 : 0.3 },
     },
   };
 
   return (
     <motion.div
-      className="min-h-screen px-4 py-16 sm:px-6 sm:py-24"
+      className="min-h-screen px-4 pt-8 pb-8 sm:px-6 sm:pt-12 sm:pb-12"
       style={{ backgroundColor: currentTheme.bgColor }}
       variants={containerVariants}
       initial="hidden"
@@ -175,8 +178,9 @@ export const GalleryPage = () => {
               <motion.div
                 key={photo.id}
                 variants={photoVariants}
-                whileHover="hover"
-                className="relative group overflow-hidden rounded-lg"
+                whileHover={prefersReducedMotion ? undefined : 'hover'}
+                className="relative group cursor-pointer overflow-hidden rounded-lg"
+                onClick={() => setSelectedPhoto(photo)}
                 style={{
                   aspectRatio: '1/1',
                   boxShadow: `0 8px 32px ${currentTheme.accentColor}33`,
@@ -184,10 +188,10 @@ export const GalleryPage = () => {
               >
                 {/* Image Container */}
                 <motion.div
-                  className="w-full h-full cursor-pointer relative"
-                  onClick={() => setSelectedPhoto(photo)}
+                  className="relative h-full w-full"
                 >
-                  <img
+                  <motion.img
+                    layoutId={`gallery-photo-${photo.id}`}
                     src={getApiUrl(photo.proxyUrl || `/api/gallery/image/${photo.id}`)}
                     alt={photo.alt}
                     className="w-full h-full object-cover"
@@ -199,12 +203,12 @@ export const GalleryPage = () => {
 
                   {/* Overlay */}
                   <motion.div
-                    className="absolute inset-0 flex items-center justify-center"
+                    className="pointer-events-none absolute inset-0 hidden items-center justify-center md:flex"
                     style={{
                       backgroundColor: `${currentTheme.primaryColor}cc`,
                     }}
                     initial={{ opacity: 0 }}
-                    whileHover={{ opacity: 1 }}
+                    whileHover={prefersReducedMotion ? undefined : { opacity: 1 }}
                     transition={{ duration: 0.3 }}
                   >
                     <motion.div
@@ -237,13 +241,14 @@ export const GalleryPage = () => {
       </div>
 
       {/* Lightbox Modal */}
-      <AnimatePresence>
+      {createPortal(
+        <AnimatePresence>
       {selectedPhoto && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+          className="fixed inset-0 z-[100] flex min-h-[100dvh] items-center justify-center p-3 sm:p-6"
           style={{
             backgroundColor: `${currentTheme.primaryColor}ee`,
-            backdropFilter: 'blur(12px)',
+            backdropFilter: 'blur(18px)',
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -251,7 +256,7 @@ export const GalleryPage = () => {
           onClick={() => setSelectedPhoto(null)}
           role="dialog"
           aria-modal="true"
-          aria-label={`${selectedPhoto.title} photo viewer`}
+          aria-label={`${selectedPhoto.title || selectedPhoto.alt || 'Gallery'} photo viewer`}
         >
           <motion.div
             className="relative w-full max-w-4xl overflow-hidden rounded-2xl p-2 sm:p-3"
@@ -284,7 +289,8 @@ export const GalleryPage = () => {
             </motion.button>
 
             {/* Image */}
-            <img
+            <motion.img
+              layoutId={`gallery-photo-${selectedPhoto.id}`}
               src={getApiUrl(selectedPhoto.proxyUrl || `/api/gallery/image/${selectedPhoto.id}`)}
               alt={selectedPhoto.alt}
               className="max-h-[72vh] w-full rounded-xl object-contain"
@@ -312,7 +318,9 @@ export const GalleryPage = () => {
           </motion.div>
         </motion.div>
       )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body,
+      )}
     </motion.div>
   );
 };
