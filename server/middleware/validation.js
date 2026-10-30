@@ -22,6 +22,19 @@ export const validateRSVP = [
     .withMessage('Attendance must be true or false'),
 ];
 
+export const validateFeedback = [
+  body('foodRating').isInt({ min: 1, max: 5 }).withMessage('Food rating must be between 1 and 5').toInt(),
+  body('venueAmbienceRating').isInt({ min: 1, max: 5 }).withMessage('Venue & ambience rating must be between 1 and 5').toInt(),
+  body('photographyRating').isInt({ min: 1, max: 5 }).withMessage('Photography rating must be between 1 and 5').toInt(),
+  body('musicEntertainmentRating').isInt({ min: 1, max: 5 }).withMessage('Music & entertainment rating must be between 1 and 5').toInt(),
+  body('comment')
+    .trim()
+    .notEmpty()
+    .withMessage('Feedback comment is required')
+    .isLength({ max: 2000 })
+    .withMessage('Feedback comment must be 2000 characters or fewer'),
+];
+
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

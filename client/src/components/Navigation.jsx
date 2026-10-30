@@ -76,6 +76,7 @@ export const Navigation = () => {
     { path: '/gallery', label: 'Gallery' },
     { path: '/guest-photos', label: 'Guest Photos' },
     { path: '/rsvp', label: 'RSVP' },
+    { path: '/feedback', label: 'Feedback' },
   ];
 
   return (

@@ -228,6 +228,9 @@ WEDDING_COORDINATES_LNG="-73.9855"
 - `GET /api/rsvp` - Get all RSVPs (admin)
 - `GET /api/rsvp/count` - Get RSVP statistics
 
+### Guest Feedback
+- `POST /api/feedback` - Save four 1-to-5 ratings and a written comment
+
 ### Health Check
 - `GET /api/health` - Server health status
 
@@ -272,21 +275,33 @@ Output: `client/dist/`
 ### Build Backend
 No build step needed; run directly with Node.js.
 
-### Deploy to Free Domain
+### Deployment
 
-📖 **[See DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** for complete step-by-step instructions!
+Deploy the backend API to [Render](https://render.com) and the frontend to [Vercel](https://vercel.com). Both services can be connected to this GitHub repository.
 
-**Quick Overview:**
-- **Frontend**: Deploy to [Vercel](https://vercel.com) (Free tier with .vercel.app domain)
-- **Backend**: Deploy to [Railway](https://railway.app) (Free tier)
+#### Backend: Render
 
-**Fastest Way:**
-1. Push to GitHub
-2. Create Railway account, connect GitHub repo, add environment variables
-3. Create Vercel account, connect GitHub repo, add `VITE_API_URL` pointing to Railway backend
-4. Your site is live! 🎉
+Create a Render Web Service with these settings:
+- **Root Directory**: `server`
+- **Build Command**: `npm install && npm run build`
+- **Start Command**: `npm run prisma:migrate:deploy && npm start`
 
-See [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for quick reference.
+Add the server environment variables in Render, including `DATABASE_URL`, wedding details, and any Google Drive or Maps credentials used by the server. Render provides the `PORT` environment variable automatically. After deployment, check `https://<your-render-service>.onrender.com/api/health`.
+
+The server uses SQLite for RSVP data. Render's service filesystem is not persistent by default; attach a persistent disk and point `DATABASE_URL` to a database file on that disk if RSVP records must survive redeployments or service restarts.
+
+#### Frontend: Vercel
+
+Import the same GitHub repository into Vercel and keep the project root at the repository root so the existing `vercel.json` is used. It configures the frontend build and SPA route rewrites.
+
+Set this environment variable in Vercel, using your deployed Render URL:
+```
+VITE_API_URL=https://<your-render-service>.onrender.com
+```
+
+Deploy the Vercel project after setting the variable. The live frontend will be available at its `.vercel.app` domain (or a custom domain you configure).
+
+See [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for a quick deployment checklist.
 
 ## Features Guide
 

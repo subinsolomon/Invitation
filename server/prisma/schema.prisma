@@ -21,3 +21,15 @@ model RSVP {
 
   @@map("rsvps")
 }
+
+model Feedback {
+  id                     Int      @id @default(autoincrement())
+  foodRating             Int
+  venueAmbienceRating    Int
+  photographyRating      Int
+  musicEntertainmentRating Int
+  comment                String
+  createdAt              DateTime @default(now())
+
+  @@map("feedback")
+}
