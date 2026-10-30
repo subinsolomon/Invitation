@@ -230,6 +230,7 @@ WEDDING_COORDINATES_LNG="-73.9855"
 
 ### Guest Feedback
 - `POST /api/feedback` - Save four 1-to-5 ratings and a written comment
+- `GET /api/feedback` - Retrieve submitted ratings and comments, newest first
 
 ### Health Check
 - `GET /api/health` - Server health status
