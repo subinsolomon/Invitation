@@ -9,9 +9,10 @@ import CeremonyPage from './pages/CeremonyPage';
 import GalleryPage from './pages/GalleryPage';
 import GuestPhotoPage from './pages/GuestPhotoPage';
 import FeedbackPage from './pages/FeedbackPage';
+import DashboardPage from './pages/DashboardPage';
 import './index.css';
 
-const ROUTE_ORDER = ['/', '/ceremony', '/gallery', '/guest-photos', '/rsvp', '/feedback'];
+const ROUTE_ORDER = ['/', '/ceremony', '/gallery', '/guest-photos', '/rsvp', '/feedback', '/dashboard'];
 const INTRO_KEY = 'invitation_opened';
 
 function InvitationIntro({ onOpen, prefersReducedMotion }) {
@@ -169,6 +170,7 @@ function AppContent() {
               <Route path="/ceremony" element={<CeremonyPage />} />
               <Route path="/rsvp" element={<RSVPPage />} />
               <Route path="/feedback" element={<FeedbackPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
             </Routes>
           </motion.div>
         </AnimatePresence>

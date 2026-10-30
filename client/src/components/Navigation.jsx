@@ -141,7 +141,7 @@ export const Navigation = () => {
           </Link>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-1 flex-1 justify-center">
+          <div className="hidden xl:flex items-center gap-1 flex-1 justify-center">
             {navLinks.map((link) => (
               <motion.div key={link.path} variants={linkVariants} whileHover={prefersReducedMotion ? undefined : 'hover'}>
                 <Link
@@ -165,7 +165,7 @@ export const Navigation = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="relative md:hidden flex-shrink-0 ml-2">
+          <div className="relative xl:hidden flex-shrink-0 ml-2">
             <button
               onClick={handleMenuToggle}
               className="p-2 rounded-lg"
@@ -217,7 +217,7 @@ export const Navigation = () => {
         <AnimatePresence>
           {isOpen && (
           <motion.div
-            className="glass-surface md:hidden mx-auto mt-2 max-w-7xl overflow-hidden rounded-2xl border border-sky-400/15 bg-slate-950/85 p-2"
+            className="glass-surface xl:hidden mx-auto mt-2 max-w-7xl overflow-hidden rounded-2xl border border-sky-400/15 bg-slate-950/85 p-2"
             variants={mobileMenuVariants}
             initial="hidden"
             animate="visible"
