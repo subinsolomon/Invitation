@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -8,10 +8,20 @@ const getApiUrl = (path) => (path?.startsWith('http') ? path : `${API_URL}${path
 
 export const GuestPhotoPage = () => {
   const { currentTheme } = useTheme();
+  const prefersReducedMotion = useReducedMotion();
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [downloadingIds, setDownloadingIds] = useState(new Set());
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setSelectedPhoto(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Fetch guest photos from backend API
   useEffect(() => {
@@ -89,29 +99,30 @@ export const GuestPhotoPage = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
+        staggerChildren: prefersReducedMotion ? 0 : 0.1,
+        delayChildren: prefersReducedMotion ? 0 : 0.2,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6 },
+      transition: { duration: prefersReducedMotion ? 0.15 : 0.6 },
     },
   };
 
   const photoVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
+    hidden: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.94 },
     visible: {
       opacity: 1,
+      y: 0,
       scale: 1,
-      transition: { duration: 0.5 },
+      transition: { duration: prefersReducedMotion ? 0.18 : 0.5 },
     },
-    hover: {
+    hover: prefersReducedMotion ? {} : {
       scale: 1.05,
       transition: { duration: 0.3 },
     },
@@ -189,39 +200,50 @@ export const GuestPhotoPage = () => {
                 className="glass-surface group relative overflow-hidden rounded-2xl"
                 style={{ backgroundColor: currentTheme.secondaryColor }}
                 variants={photoVariants}
-                whileHover="hover"
+                whileHover={prefersReducedMotion ? undefined : 'hover'}
               >
                 {/* Image Container */}
                 <div
                   className="relative aspect-square overflow-hidden bg-gray-200"
                 >
                   <motion.img
+                    layoutId={`guest-photo-${photo.id}`}
                     src={getApiUrl(photo.proxyUrl)}
                     alt={photo.alt}
                     className="w-full h-full object-cover"
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ duration: 0.3 }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View ${photo.alt || photo.name || 'guest photo'}`}
+                    onClick={() => setSelectedPhoto(photo)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setSelectedPhoto(photo);
+                      }
+                    }}
+                    whileHover={prefersReducedMotion ? undefined : { scale: 1.1 }}
+                    transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
                   />
 
                   {/* Overlay with Download Button */}
                   <motion.div
-                    className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-all duration-300"
+                    className="pointer-events-none absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-all duration-300"
                     initial={{ opacity: 0 }}
                     whileHover={{ opacity: 1 }}
                   >
                     <motion.button
+                      className="pointer-events-auto px-3 xs:px-4 py-2 rounded-lg font-semibold text-white transition-all duration-300 text-xs xs:text-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDownload(photo);
                       }}
                       disabled={downloadingIds.has(photo.id)}
-                      className="px-3 xs:px-4 py-2 rounded-lg font-semibold text-white transition-all duration-300 text-xs xs:text-sm"
                       style={{
                         backgroundColor: currentTheme.accentColor,
                         opacity: downloadingIds.has(photo.id) ? 0.7 : 1,
                       }}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
+                      whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
                     >
                       {downloadingIds.has(photo.id) ? '⏳ Downloading...' : '⬇️ Download'}
                     </motion.button>
@@ -258,6 +280,48 @@ export const GuestPhotoPage = () => {
           </motion.div>
         )}
       </div>
+
+      <AnimatePresence>
+        {selectedPhoto && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 p-3 backdrop-blur-xl sm:p-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedPhoto(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${selectedPhoto.alt || selectedPhoto.name || 'Guest'} photo viewer`}
+          >
+            <motion.div
+              className="relative w-full max-w-5xl overflow-hidden rounded-2xl border border-sky-300/30 bg-slate-950/90 p-2 shadow-2xl sm:p-4"
+              onClick={(event) => event.stopPropagation()}
+              initial={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.97 }}
+              transition={{ duration: prefersReducedMotion ? 0.15 : 0.3 }}
+            >
+              <button
+                type="button"
+                aria-label="Close photo viewer"
+                className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-slate-950/75 text-2xl text-white"
+                onClick={() => setSelectedPhoto(null)}
+              >
+                &times;
+              </button>
+              <motion.img
+                layoutId={`guest-photo-${selectedPhoto.id}`}
+                src={getApiUrl(selectedPhoto.proxyUrl)}
+                alt={selectedPhoto.alt}
+                className="max-h-[78vh] w-full rounded-xl object-contain"
+              />
+              <p className="px-3 pb-2 pt-4 text-center text-sm text-white/70">
+                {new Date(selectedPhoto.createdTime).toLocaleDateString()}
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style>{`
         @keyframes spin {

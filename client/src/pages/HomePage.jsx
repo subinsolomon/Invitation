@@ -7,14 +7,12 @@ import Sparkle from '../components/Sparkle';
 import WeddingNames from '../components/WeddingNames';
 import { configService } from '../services/api';
 
-export const HomePage = () => {
+export const HomePage = ({ isIntroComplete = true }) => {
   const { currentTheme } = useTheme();
   const prefersReducedMotion = useReducedMotion();
   const { scrollY } = useScroll();
   const heroImageY = useTransform(scrollY, [0, 700], [0, 110]);
-  const heroImageScale = useTransform(scrollY, [0, 700], [1, 1.12]);
   const [config, setConfig] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -23,8 +21,6 @@ export const HomePage = () => {
         setConfig(data);
       } catch (error) {
         console.error('Failed to fetch config:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -36,35 +32,20 @@ export const HomePage = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
+        staggerChildren: prefersReducedMotion ? 0 : 0.14,
+        delayChildren: prefersReducedMotion ? 0 : 0.2,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.8 },
+      transition: { duration: prefersReducedMotion ? 0.15 : 0.8 },
     },
   };
-
-  if (loading) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center" style={{ backgroundColor: currentTheme.bgColor }}>
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="w-12 h-12 border-4 rounded-full"
-          style={{
-            borderColor: currentTheme.accentColor,
-            borderRightColor: 'transparent',
-          }}
-        />
-      </div>
-    );
-  }
 
   return (
     <motion.div
@@ -80,11 +61,13 @@ export const HomePage = () => {
         className="absolute inset-0 pointer-events-none"
         style={{
           y: prefersReducedMotion ? 0 : heroImageY,
-          scale: prefersReducedMotion ? 1 : heroImageScale,
           backgroundImage: "url('https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&h=800&fit=crop')",
           backgroundSize: 'cover',
           backgroundPosition: 'center 35%',
         }}
+        initial={{ scale: prefersReducedMotion || isIntroComplete ? 1 : 1.08 }}
+        animate={{ scale: prefersReducedMotion || isIntroComplete ? 1 : 1.08 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 1.2, ease: [0.22, 1, 0.36, 1] }}
         aria-hidden="true"
       />
       <div
@@ -101,31 +84,35 @@ export const HomePage = () => {
           className="grid min-h-[calc(100vh-9rem)] content-start gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-end"
           variants={containerVariants}
           initial="hidden"
-          animate="visible"
+          animate={isIntroComplete ? 'visible' : 'hidden'}
         >
           <div className="max-w-3xl">
             <motion.div variants={itemVariants} className="eyebrow mb-6">
               An invitation to celebrate
             </motion.div>
-            {config && (
-              <motion.div variants={itemVariants}>
-              <WeddingNames 
-                brideName={config.brideName} 
-                groomName={config.groomName}
+            <motion.div variants={itemVariants}>
+              <WeddingNames
+                isVisible={isIntroComplete}
+                brideName="Sajini"
+                groomName="Subin"
               />
-              <p className="max-w-xl text-base leading-8 text-white/75 sm:text-lg">
-                Together with our families, we invite you to share an unforgettable day of love, laughter, and new beginnings.
-              </p>
-              </motion.div>
-            )}
+            </motion.div>
 
-            <motion.div variants={itemVariants} className="mt-10 flex flex-col gap-3 sm:flex-row">
-              <Link to="/ceremony" className="inline-flex items-center justify-center rounded-full px-7 py-3.5 font-semibold" style={{ backgroundColor: currentTheme.accentColor, color: currentTheme.primaryColor }}>
+            <motion.p variants={itemVariants} className="max-w-xl text-base leading-8 text-white/75 sm:text-lg">
+              Together with our families, we invite you to share an unforgettable day of love, laughter, and new beginnings.
+            </motion.p>
+
+            <motion.div variants={itemVariants} className="mt-10 flex flex-col items-center justify-center gap-3 md:flex-row md:items-start md:justify-start">
+              <motion.div whileHover={prefersReducedMotion ? undefined : { scale: 1.03, y: -2 }} whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}>
+                <Link to="/ceremony" className="inline-flex items-center justify-center rounded-full px-7 py-3.5 font-semibold" style={{ backgroundColor: currentTheme.accentColor, color: currentTheme.primaryColor }}>
                 Explore the day <span className="ml-3" aria-hidden="true">↗</span>
-              </Link>
-              <Link to="/rsvp" className="inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-7 py-3.5 font-semibold text-white backdrop-blur-sm">
+                </Link>
+              </motion.div>
+              <motion.div whileHover={prefersReducedMotion ? undefined : { scale: 1.03, y: -2 }} whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}>
+                <Link to="/rsvp" className="inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-7 py-3.5 font-semibold text-white backdrop-blur-sm">
                 RSVP now
-              </Link>
+                </Link>
+              </motion.div>
             </motion.div>
           </div>
 
@@ -137,12 +124,12 @@ export const HomePage = () => {
               </div>
               <span className="text-3xl" aria-hidden="true">✦</span>
             </div>
-            {config && <Countdown weddingDate={config.weddingDate} />}
+            <Countdown weddingDate={config?.weddingDate || '2027-05-08T14:00:00+05:30'} />
             <Sparkle>
-              <blockquote className="mt-8 border-t border-white/15 pt-6 text-center font-serif text-xl italic leading-8 text-white/85">
+              <motion.blockquote variants={itemVariants} className="mt-8 border-t border-white/15 pt-6 text-center font-serif text-xl italic leading-8 text-white/85">
                 &ldquo;Therefore what God has joined together, let no one separate.&rdquo;
                 <footer className="mt-3 font-sans text-xs not-italic uppercase tracking-[0.2em] text-white/55">Mark 10:9</footer>
-              </blockquote>
+              </motion.blockquote>
             </Sparkle>
           </motion.aside>
         </motion.div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useCountdown } from '../hooks/useCountdown';
 import { useTheme } from '../context/ThemeContext';
 
@@ -19,12 +19,12 @@ export const Countdown = ({ weddingDate }) => {
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.5,
+        duration: prefersReducedMotion ? 0.15 : 0.5,
       },
     },
   };
@@ -70,20 +70,20 @@ export const Countdown = ({ weddingDate }) => {
                 borderColor: `${currentTheme.accentColor}55`,
               }}
             >
-              <motion.span
-                key={item.value}
-                initial={{
-                  opacity: 0,
-                  y: prefersReducedMotion ? 0 : 12,
-                  rotateX: prefersReducedMotion ? 0 : -55,
-                }}
-                animate={{ opacity: 1, y: 0, rotateX: 0 }}
-                transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease: 'easeOut' }}
-                className="inline-block"
-                style={{ transformOrigin: 'center' }}
-              >
-                {String(item.value).padStart(2, '0')}
-              </motion.span>
+              <span className="relative inline-flex h-[1.2em] min-w-[2ch] items-center justify-center overflow-hidden" aria-live="off">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.span
+                    key={item.value}
+                    initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -12 }}
+                    transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease: 'easeOut' }}
+                    className="inline-block"
+                  >
+                    {String(item.value).padStart(2, '0')}
+                  </motion.span>
+                </AnimatePresence>
+              </span>
             </motion.div>
             <p className="mt-2 text-[0.6rem] uppercase tracking-[0.16em] opacity-65 sm:text-xs" style={{ color: currentTheme.textColor }}>
               {item.label}
