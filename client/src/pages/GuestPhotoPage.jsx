@@ -119,7 +119,7 @@ export const GuestPhotoPage = () => {
 
   return (
     <motion.div
-      className="min-h-screen px-4 py-16 sm:px-6 sm:py-24"
+      className="min-h-screen px-4 pt-8 pb-8 sm:px-6 sm:pt-12 sm:pb-12"
       style={{ backgroundColor: currentTheme.bgColor }}
       variants={containerVariants}
       initial="hidden"

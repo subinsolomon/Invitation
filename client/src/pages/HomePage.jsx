@@ -96,9 +96,9 @@ export const HomePage = () => {
       <div className="absolute inset-0 z-[1] bg-[radial-gradient(circle_at_50%_20%,transparent,rgba(0,0,0,0.5)_75%)]" />
 
       {/* Content */}
-      <div className="relative z-10 max-w-6xl mx-auto px-5 sm:px-8 lg:px-12 py-16 sm:py-24 lg:py-28">
+      <div className="relative z-10 max-w-6xl mx-auto px-5 sm:px-8 lg:px-12 pt-6 pb-8 sm:pt-10 sm:pb-12 lg:pt-12 lg:pb-16">
         <motion.div
-          className="grid min-h-[calc(100vh-9rem)] content-center gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-end"
+          className="grid min-h-[calc(100vh-9rem)] content-start gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-end"
           variants={containerVariants}
           initial="hidden"
           animate="visible"

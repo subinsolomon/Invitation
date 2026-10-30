@@ -96,11 +96,34 @@ export const Navigation = () => {
             className="flex items-center gap-2 xs:gap-3 group flex-shrink-0"
           >
             <motion.div
-              className="text-2xl xs:text-3xl sm:text-4xl"
-              animate={{ y: [0, -3, 0], rotate: [0, 4, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="relative flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border"
+              style={{
+                borderColor: `${currentTheme.accentColor}99`,
+                background: `radial-gradient(circle at 35% 28%, ${currentTheme.accentColor}33, ${currentTheme.primaryColor} 72%)`,
+                boxShadow: `0 0 20px ${currentTheme.accentColor}22, inset 0 0 12px ${currentTheme.accentColor}18`,
+              }}
+              whileHover={{ scale: 1.06, rotate: -4 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+              aria-hidden="true"
             >
-              💒
+              <span
+                className="absolute -translate-x-1.5 -translate-y-1 font-serif text-2xl font-bold italic leading-none"
+                style={{ color: currentTheme.textColor }}
+              >
+                S
+              </span>
+              <span
+                className="absolute translate-x-1.5 translate-y-1 font-serif text-2xl font-bold italic leading-none"
+                style={{ color: currentTheme.accentColor }}
+              >
+                S
+              </span>
+              <span
+                className="absolute z-10 font-serif text-[0.55rem] italic leading-none"
+                style={{ color: currentTheme.accentColor }}
+              >
+                &amp;
+              </span>
             </motion.div>
             <div className="hidden xs:block">
               <motion.h1

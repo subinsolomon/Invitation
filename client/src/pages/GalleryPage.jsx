@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 
@@ -12,6 +13,19 @@ export const GalleryPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
+
+  useEffect(() => {
+    const mobileQuery = window.matchMedia('(max-width: 767px)');
+    const handleViewportChange = (event) => {
+      setIsMobile(event.matches);
+      if (event.matches) setSelectedPhoto(null);
+    };
+
+    setIsMobile(mobileQuery.matches);
+    mobileQuery.addEventListener('change', handleViewportChange);
+    return () => mobileQuery.removeEventListener('change', handleViewportChange);
+  }, []);
 
   // Fetch photos from backend API
   useEffect(() => {
@@ -106,7 +120,7 @@ export const GalleryPage = () => {
 
   return (
     <motion.div
-      className="min-h-screen px-4 py-16 sm:px-6 sm:py-24"
+      className="min-h-screen px-4 pt-8 pb-8 sm:px-6 sm:pt-12 sm:pb-12"
       style={{ backgroundColor: currentTheme.bgColor }}
       variants={containerVariants}
       initial="hidden"
@@ -176,7 +190,10 @@ export const GalleryPage = () => {
                 key={photo.id}
                 variants={photoVariants}
                 whileHover="hover"
-                className="relative group overflow-hidden rounded-lg"
+                className={`relative group overflow-hidden rounded-lg ${isMobile ? '' : 'cursor-pointer'}`}
+                onClick={() => {
+                  if (!isMobile) setSelectedPhoto(photo);
+                }}
                 style={{
                   aspectRatio: '1/1',
                   boxShadow: `0 8px 32px ${currentTheme.accentColor}33`,
@@ -184,8 +201,7 @@ export const GalleryPage = () => {
               >
                 {/* Image Container */}
                 <motion.div
-                  className="w-full h-full cursor-pointer relative"
-                  onClick={() => setSelectedPhoto(photo)}
+                  className="relative h-full w-full"
                 >
                   <img
                     src={getApiUrl(photo.proxyUrl || `/api/gallery/image/${photo.id}`)}
@@ -199,7 +215,7 @@ export const GalleryPage = () => {
 
                   {/* Overlay */}
                   <motion.div
-                    className="absolute inset-0 flex items-center justify-center"
+                    className="pointer-events-none absolute inset-0 hidden items-center justify-center md:flex"
                     style={{
                       backgroundColor: `${currentTheme.primaryColor}cc`,
                     }}
@@ -237,10 +253,11 @@ export const GalleryPage = () => {
       </div>
 
       {/* Lightbox Modal */}
-      <AnimatePresence>
-      {selectedPhoto && (
+      {createPortal(
+        <AnimatePresence>
+      {selectedPhoto && !isMobile && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+          className="fixed inset-0 z-[100] flex min-h-[100dvh] items-center justify-center p-3 sm:p-6"
           style={{
             backgroundColor: `${currentTheme.primaryColor}ee`,
             backdropFilter: 'blur(12px)',
@@ -312,7 +329,9 @@ export const GalleryPage = () => {
           </motion.div>
         </motion.div>
       )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body,
+      )}
     </motion.div>
   );
 };
