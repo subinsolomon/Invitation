@@ -7,6 +7,7 @@ import configRoutes from './routes/config.js';
 import galleryRoutes from './routes/gallery.js';
 import guestPhotosRoutes from './routes/guestPhotos.js';
 import feedbackRoutes from './routes/feedback.js';
+import dashboardRoutes from './routes/dashboard.js';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -22,6 +23,7 @@ app.use('/api/config', configRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/guest-photos', guestPhotosRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -151,6 +151,7 @@ THEME_PRIMARY_COLOR="#000000"
 THEME_SECONDARY_COLOR="#ffffff"
 THEME_ACCENT_COLOR="#ffd700"
 GOOGLE_MAPS_API_KEY="your_api_key_here"
+ADMIN_DASHBOARD_TOKEN="use-a-long-random-secret"
 ```
 
 **Client** (`client/.env`):
@@ -225,12 +226,15 @@ WEDDING_COORDINATES_LNG="-73.9855"
 
 ### RSVP Management
 - `POST /api/rsvp` - Submit new RSVP
-- `GET /api/rsvp` - Get all RSVPs (admin)
-- `GET /api/rsvp/count` - Get RSVP statistics
+- `GET /api/rsvp` - Get all RSVPs (requires `Authorization: Bearer <ADMIN_DASHBOARD_TOKEN>`)
+- `GET /api/rsvp/count` - Get RSVP statistics (requires dashboard token)
 
 ### Guest Feedback
 - `POST /api/feedback` - Save four 1-to-5 ratings and a written comment
-- `GET /api/feedback` - Retrieve submitted ratings and comments, newest first
+- `GET /api/feedback` - Retrieve submitted ratings and comments, newest first (requires dashboard token)
+- `GET /api/dashboard` - Get RSVP and feedback records with summary averages (requires dashboard token)
+
+Set `ADMIN_DASHBOARD_TOKEN` in `server/.env` for local use and in the Render service environment for production. Open the app's `/dashboard` page and enter the same token; it is sent in an Authorization header and kept in page memory only. Do not configure this token as a `VITE_` frontend variable.
 
 ### Health Check
 - `GET /api/health` - Server health status
@@ -289,7 +293,9 @@ Create a Render Web Service with these settings:
 
 Add the server environment variables in Render, including `DATABASE_URL`, wedding details, and any Google Drive or Maps credentials used by the server. Render provides the `PORT` environment variable automatically. After deployment, check `https://<your-render-service>.onrender.com/api/health`.
 
-The server uses SQLite for RSVP data. Render's service filesystem is not persistent by default; attach a persistent disk and point `DATABASE_URL` to a database file on that disk if RSVP records must survive redeployments or service restarts.
+The server uses SQLite for RSVP and feedback data. Render's service filesystem is not persistent by default; attach a persistent disk and point `DATABASE_URL` to a database file on that disk if submissions must survive redeployments or service restarts.
+
+Add `ADMIN_DASHBOARD_TOKEN` as a Render environment variable. Use a long, unique secret. This protects the dashboard and the RSVP/feedback list endpoints.
 
 #### Frontend: Vercel
 

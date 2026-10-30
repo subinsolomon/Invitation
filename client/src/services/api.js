@@ -69,4 +69,20 @@ export const feedbackService = {
   },
 };
 
+export const dashboardService = {
+  getData: async (accessToken) => {
+    try {
+      const response = await api.get('/dashboard', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw error;
+    }
+  },
+};
+
 export default api;
