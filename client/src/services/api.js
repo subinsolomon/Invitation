@@ -55,4 +55,18 @@ export const rsvpService = {
   },
 };
 
+export const feedbackService = {
+  submitFeedback: async (data) => {
+    try {
+      const response = await api.post('/feedback', data);
+      return response.data;
+    } catch (error) {
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw error;
+    }
+  },
+};
+
 export default api;
