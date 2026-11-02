@@ -28,6 +28,7 @@ export const DashboardPage = () => {
   const [accessToken, setAccessToken] = useState('');
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [updatingFeedbackStatus, setUpdatingFeedbackStatus] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const loadDashboard = async (token) => {
@@ -57,6 +58,20 @@ export const DashboardPage = () => {
     setTokenInput('');
     setDashboard(null);
     setErrorMessage('');
+  };
+
+  const handleFeedbackToggle = async () => {
+    const enabled = !dashboard.feedbackEnabled;
+    setUpdatingFeedbackStatus(true);
+    setErrorMessage('');
+    try {
+      const result = await dashboardService.setFeedbackEnabled(accessToken, enabled);
+      setDashboard((current) => ({ ...current, feedbackEnabled: result.feedbackEnabled }));
+    } catch (error) {
+      setErrorMessage(error.message || 'Could not change feedback availability.');
+    } finally {
+      setUpdatingFeedbackStatus(false);
+    }
   };
 
   if (!dashboard) {
@@ -158,6 +173,27 @@ export const DashboardPage = () => {
               <p className="mt-1 text-xs text-white/45">{card.detail}</p>
             </motion.article>
           ))}
+        </section>
+
+        <section className="mt-6 flex flex-col gap-4 border-y border-white/10 py-5 sm:flex-row sm:items-center sm:justify-between" aria-label="Feedback availability">
+          <div>
+            <p className="font-medium text-white">Feedback submissions</p>
+            <p className="mt-1 text-sm text-white/55">
+              {dashboard.feedbackEnabled ? 'Guests can submit ratings and comments.' : 'The feedback form is hidden from guests.'}
+              {' '}Changes reach open feedback pages within a few seconds.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={dashboard.feedbackEnabled}
+            aria-label="Accept feedback submissions"
+            onClick={handleFeedbackToggle}
+            disabled={updatingFeedbackStatus}
+            className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border transition-colors disabled:cursor-wait disabled:opacity-60 ${dashboard.feedbackEnabled ? 'border-emerald-300/50 bg-emerald-400/25' : 'border-white/20 bg-white/10'}`}
+          >
+            <span className={`absolute left-1 h-6 w-6 rounded-full shadow transition-transform ${dashboard.feedbackEnabled ? 'translate-x-6 bg-emerald-200' : 'translate-x-0 bg-slate-300'}`} />
+          </button>
         </section>
 
         <section className="mt-10" aria-labelledby="ratings-title">

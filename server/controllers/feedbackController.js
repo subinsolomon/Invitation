@@ -1,4 +1,14 @@
 import prisma from '../config/database.js';
+import { isFeedbackEnabled } from '../services/feedbackSettings.js';
+
+export const getFeedbackStatus = async (_req, res) => {
+  try {
+    res.json({ enabled: await isFeedbackEnabled() });
+  } catch (error) {
+    console.error('Error checking feedback status:', error);
+    res.status(500).json({ message: 'Unable to check feedback availability.' });
+  }
+};
 
 export const getAllFeedback = async (_req, res) => {
   try {
@@ -15,6 +25,10 @@ export const getAllFeedback = async (_req, res) => {
 
 export const createFeedback = async (req, res) => {
   try {
+    if (!(await isFeedbackEnabled())) {
+      return res.status(403).json({ message: 'Feedback submissions are currently closed.' });
+    }
+
     const feedback = await prisma.feedback.create({
       data: {
         foodRating: req.body.foodRating,

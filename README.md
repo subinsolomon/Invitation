@@ -231,10 +231,12 @@ WEDDING_COORDINATES_LNG="-73.9855"
 
 ### Guest Feedback
 - `POST /api/feedback` - Save four 1-to-5 ratings and a written comment
+- `GET /api/feedback/status` - Check whether feedback submissions are currently open
 - `GET /api/feedback` - Retrieve submitted ratings and comments, newest first (requires dashboard token)
 - `GET /api/dashboard` - Get RSVP and feedback records with summary averages (requires dashboard token)
+- `PATCH /api/dashboard/feedback-status` - Turn feedback submissions on or off (requires dashboard token; JSON body: `{"enabled": true}`)
 
-Set `ADMIN_DASHBOARD_TOKEN` in `server/.env` for local use and in the Render service environment for production. Open the app's `/dashboard` page and enter the same token; it is sent in an Authorization header and kept in page memory only. Do not configure this token as a `VITE_` frontend variable.
+Set `ADMIN_DASHBOARD_TOKEN` in `server/.env` for local use and in the Render service environment for production. Open the app's `/dashboard` page and enter the same token; it is sent in an Authorization header and kept in page memory only. The dashboard switch is persisted in the database, and open feedback pages check availability every three seconds. Submissions are also rejected by the server while feedback is closed. Do not configure this token as a `VITE_` frontend variable.
 
 ### Health Check
 - `GET /api/health` - Server health status
