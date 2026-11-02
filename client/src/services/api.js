@@ -56,13 +56,25 @@ export const rsvpService = {
 };
 
 export const feedbackService = {
+  getStatus: async () => {
+    try {
+      const response = await api.get('/feedback/status');
+      return response.data;
+    } catch (error) {
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw error;
+    }
+  },
+
   submitFeedback: async (data) => {
     try {
       const response = await api.post('/feedback', data);
       return response.data;
     } catch (error) {
       if (error.response?.data) {
-        throw error.response.data;
+        throw { ...error.response.data, status: error.response.status };
       }
       throw error;
     }
@@ -73,6 +85,20 @@ export const dashboardService = {
   getData: async (accessToken) => {
     try {
       const response = await api.get('/dashboard', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw error;
+    }
+  },
+
+  setFeedbackEnabled: async (accessToken, enabled) => {
+    try {
+      const response = await api.patch('/dashboard/feedback-status', { enabled }, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       return response.data;

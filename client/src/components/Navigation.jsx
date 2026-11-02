@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
+import { feedbackService } from '../services/api';
 
 export const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [feedbackEnabled, setFeedbackEnabled] = useState(false);
   const [showMenuHint, setShowMenuHint] = useState(() => {
     try {
       return sessionStorage.getItem('mobile-menu-hint-dismissed') !== 'true';
@@ -15,6 +17,25 @@ export const Navigation = () => {
   const location = useLocation();
   const { currentTheme } = useTheme();
   const prefersReducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    let active = true;
+    const checkFeedbackStatus = async () => {
+      try {
+        const status = await feedbackService.getStatus();
+        if (active) setFeedbackEnabled(status.enabled);
+      } catch {
+        if (active) setFeedbackEnabled(false);
+      }
+    };
+
+    checkFeedbackStatus();
+    const intervalId = window.setInterval(checkFeedbackStatus, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   const isActive = (path) => location.pathname === path;
 
@@ -76,7 +97,7 @@ export const Navigation = () => {
     { path: '/gallery', label: 'Gallery' },
     { path: '/guest-photos', label: 'Guest Photos' },
     { path: '/rsvp', label: 'RSVP' },
-    { path: '/feedback', label: 'Feedback' },
+    ...(feedbackEnabled ? [{ path: '/feedback', label: 'Feedback' }] : []),
   ];
 
   return (

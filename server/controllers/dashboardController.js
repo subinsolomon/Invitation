@@ -1,4 +1,5 @@
 import prisma from '../config/database.js';
+import { isFeedbackEnabled, updateFeedbackEnabled } from '../services/feedbackSettings.js';
 
 const average = (records, field) => (
   records.length
@@ -8,14 +9,16 @@ const average = (records, field) => (
 
 export const getDashboardData = async (_req, res) => {
   try {
-    const [rsvps, feedback] = await Promise.all([
+    const [rsvps, feedback, feedbackEnabled] = await Promise.all([
       prisma.rSVP.findMany({ orderBy: { createdAt: 'desc' } }),
       prisma.feedback.findMany({ orderBy: { createdAt: 'desc' } }),
+      isFeedbackEnabled(),
     ]);
 
     res.json({
       rsvps,
       feedback,
+      feedbackEnabled,
       summary: {
         totalRSVPs: rsvps.length,
         attending: rsvps.filter(({ attendance }) => attendance).length,
@@ -32,5 +35,20 @@ export const getDashboardData = async (_req, res) => {
   } catch (error) {
     console.error('Error loading dashboard data:', error);
     res.status(500).json({ message: 'Unable to load dashboard data right now.' });
+  }
+};
+
+export const updateDashboardFeedbackStatus = async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ message: 'enabled must be a boolean.' });
+    }
+
+    const feedbackEnabled = await updateFeedbackEnabled(enabled);
+    res.json({ feedbackEnabled });
+  } catch (error) {
+    console.error('Error updating feedback status:', error);
+    res.status(500).json({ message: 'Unable to update feedback availability.' });
   }
 };

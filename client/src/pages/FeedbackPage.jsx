@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { feedbackService } from '../services/api';
@@ -25,8 +25,28 @@ export const FeedbackPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [feedbackEnabled, setFeedbackEnabled] = useState(null);
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  useEffect(() => {
+    let active = true;
+    const checkAvailability = async () => {
+      try {
+        const status = await feedbackService.getStatus();
+        if (active) setFeedbackEnabled(status.enabled);
+      } catch {
+        if (active) setFeedbackEnabled(null);
+      }
+    };
+
+    checkAvailability();
+    const intervalId = window.setInterval(checkAvailability, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -50,6 +70,9 @@ export const FeedbackPage = () => {
       setRatings(emptyRatings);
       setComment('');
     } catch (error) {
+      if (error.status === 403) {
+        setFeedbackEnabled(false);
+      }
       setErrorMessage(error.message || 'Feedback could not be submitted. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -74,6 +97,18 @@ export const FeedbackPage = () => {
           </p>
         </header>
 
+        {feedbackEnabled !== true ? (
+          <div className="glass-surface rounded-2xl border border-sky-300/15 p-6 sm:p-8" role="status" aria-live="polite">
+            <h2 className="font-serif text-2xl text-white">
+              {feedbackEnabled === false ? 'Feedback is currently closed' : 'Checking feedback availability'}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-white/65">
+              {feedbackEnabled === false
+                ? 'Please check back later. We are not accepting new ratings at the moment.'
+                : 'The feedback form will appear when it is available.'}
+            </p>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="glass-surface rounded-2xl p-5 sm:p-8">
           <div className="divide-y divide-white/10">
             {ratingCategories.map((category, index) => {
@@ -183,6 +218,7 @@ export const FeedbackPage = () => {
             </motion.button>
           </div>
         </form>
+        )}
       </div>
     </motion.main>
   );

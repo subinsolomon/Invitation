@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { feedbackService } from '../services/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const FEEDBACK_PROMPT_KEY = 'guest_feedback_prompted';
 
 const getApiUrl = (path) => (path?.startsWith('http') ? path : `${API_URL}${path}`);
 
@@ -14,10 +17,81 @@ export const GuestPhotoPage = () => {
   const [error, setError] = useState(null);
   const [downloadingIds, setDownloadingIds] = useState(new Set());
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [feedbackEnabled, setFeedbackEnabled] = useState(false);
+  const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
+  const promptedThisSession = useRef(null);
+  const checkingPrompt = useRef(false);
+  const activeScrollSeconds = useRef(0);
+
+  if (promptedThisSession.current === null) {
+    try {
+      promptedThisSession.current = sessionStorage.getItem(FEEDBACK_PROMPT_KEY) === 'true';
+    } catch {
+      promptedThisSession.current = false;
+    }
+  }
+
+  const showPromptIfFeedbackIsOpen = async () => {
+    if (promptedThisSession.current || checkingPrompt.current) return;
+    checkingPrompt.current = true;
+
+    try {
+      const status = await feedbackService.getStatus();
+      setFeedbackEnabled(status.enabled);
+      if (!status.enabled) return;
+
+      promptedThisSession.current = true;
+      try {
+        sessionStorage.setItem(FEEDBACK_PROMPT_KEY, 'true');
+      } catch {
+        // Keep the once-per-session guard in memory if storage is unavailable.
+      }
+      setShowFeedbackPrompt(true);
+    } catch {
+      setFeedbackEnabled(false);
+    } finally {
+      checkingPrompt.current = false;
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    const checkFeedbackStatus = async () => {
+      try {
+        const status = await feedbackService.getStatus();
+        if (active) setFeedbackEnabled(status.enabled);
+      } catch {
+        if (active) setFeedbackEnabled(false);
+      }
+    };
+
+    checkFeedbackStatus();
+    const intervalId = window.setInterval(checkFeedbackStatus, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!feedbackEnabled || promptedThisSession.current) return undefined;
+
+    const intervalId = window.setInterval(() => {
+      if (promptedThisSession.current) return;
+      if (document.visibilityState !== 'visible' || window.scrollY <= 0) return;
+      activeScrollSeconds.current += 1;
+      if (activeScrollSeconds.current >= 10) showPromptIfFeedbackIsOpen();
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [feedbackEnabled]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setSelectedPhoto(null);
+      if (event.key === 'Escape') {
+        setSelectedPhoto(null);
+        setShowFeedbackPrompt(false);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -82,6 +156,7 @@ export const GuestPhotoPage = () => {
       document.body.removeChild(link);
 
       console.log(`✅ Downloaded: ${filename}`);
+      showPromptIfFeedbackIsOpen();
     } catch (err) {
       console.error('❌ Error downloading photo:', err);
       alert(`Error downloading photo: ${err.message}`);
@@ -319,6 +394,71 @@ export const GuestPhotoPage = () => {
                 {new Date(selectedPhoto.createdTime).toLocaleDateString()}
               </p>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showFeedbackPrompt && (
+          <motion.div
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/75 px-4 py-8 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowFeedbackPrompt(false)}
+            role="presentation"
+          >
+            <motion.section
+              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-sky-200/20 bg-slate-950 p-6 shadow-[0_28px_90px_rgba(0,0,0,0.6)] sm:p-8"
+              initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 24, scale: prefersReducedMotion ? 1 : 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: prefersReducedMotion ? 0 : 12, scale: prefersReducedMotion ? 1 : 0.98 }}
+              transition={{ duration: prefersReducedMotion ? 0.15 : 0.35, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="guest-feedback-title"
+              aria-describedby="guest-feedback-description"
+            >
+              <div className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-sky-400/10 blur-3xl" />
+              <button
+                type="button"
+                aria-label="Dismiss feedback invitation"
+                onClick={() => setShowFeedbackPrompt(false)}
+                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-xl text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                &times;
+              </button>
+              <div className="relative">
+                <span className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-amber-300/25 bg-amber-300/10 text-2xl text-amber-300" aria-hidden="true">
+                  &#9733;
+                </span>
+                <p className="eyebrow mb-2">A little note</p>
+                <h2 id="guest-feedback-title" className="font-serif text-3xl font-semibold text-white">
+                  How was the celebration?
+                </h2>
+                <p id="guest-feedback-description" className="mt-3 text-sm leading-6 text-white/65">
+                  We would love to hear what you thought of the day. Your ratings and a short note help us keep these memories close.
+                </p>
+                <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowFeedbackPrompt(false)}
+                    className="min-h-12 rounded-lg border border-white/15 px-5 text-sm font-medium text-white/75 transition-colors hover:bg-white/5 hover:text-white"
+                  >
+                    Maybe later
+                  </button>
+                  <Link
+                    to="/feedback"
+                    onClick={() => setShowFeedbackPrompt(false)}
+                    className="inline-flex min-h-12 items-center justify-center rounded-lg px-5 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5"
+                    style={{ backgroundColor: currentTheme.accentColor }}
+                  >
+                    Share feedback <span className="ml-2" aria-hidden="true">&#8599;</span>
+                  </Link>
+                </div>
+              </div>
+            </motion.section>
           </motion.div>
         )}
       </AnimatePresence>
