@@ -22,13 +22,25 @@ export const configService = {
 };
 
 export const rsvpService = {
+  getStatus: async () => {
+    try {
+      const response = await api.get('/rsvp/status');
+      return response.data;
+    } catch (error) {
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw error;
+    }
+  },
+
   submitRSVP: async (data) => {
     try {
       const response = await api.post('/rsvp', data);
       return response.data;
     } catch (error) {
       if (error.response?.data) {
-        throw error.response.data;
+        throw { ...error.response.data, status: error.response.status };
       }
       throw error;
     }
@@ -81,6 +93,35 @@ export const feedbackService = {
   },
 };
 
+export const shareMemoriesService = {
+  getStatus: async () => {
+    try {
+      const response = await api.get('/share-memories/status');
+      return response.data;
+    } catch (error) {
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw error;
+    }
+  },
+};
+
+export const weddingPhaseService = {
+  getPhase: async () => {
+    try {
+      const response = await api.get('/wedding/phase');
+      return response.data;
+    } catch (error) {
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw error;
+    }
+  },
+};
+
+
 export const dashboardService = {
   getData: async (accessToken) => {
     try {
@@ -109,6 +150,49 @@ export const dashboardService = {
       throw error;
     }
   },
+
+  setRSVPEnabled: async (accessToken, enabled) => {
+    try {
+      const response = await api.patch('/dashboard/rsvp-status', { enabled }, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw error;
+    }
+  },
+
+  setMemorySharingEnabled: async (accessToken, enabled) => {
+    try {
+      const response = await api.patch('/dashboard/memory-sharing-status', { enabled }, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw error;
+    }
+  },
+
+  setWeddingPhase: async (accessToken, phase) => {
+    try {
+      const response = await api.patch('/dashboard/wedding-phase', { phase }, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw error;
+    }
+  },
+
 };
 
 export default api;

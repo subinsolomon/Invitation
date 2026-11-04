@@ -226,6 +226,7 @@ WEDDING_COORDINATES_LNG="-73.9855"
 
 ### RSVP Management
 - `POST /api/rsvp` - Submit new RSVP
+- `GET /api/rsvp/status` - Check whether RSVP submissions are currently open
 - `GET /api/rsvp` - Get all RSVPs (requires `Authorization: Bearer <ADMIN_DASHBOARD_TOKEN>`)
 - `GET /api/rsvp/count` - Get RSVP statistics (requires dashboard token)
 
@@ -233,10 +234,15 @@ WEDDING_COORDINATES_LNG="-73.9855"
 - `POST /api/feedback` - Save four 1-to-5 ratings and a written comment
 - `GET /api/feedback/status` - Check whether feedback submissions are currently open
 - `GET /api/feedback` - Retrieve submitted ratings and comments, newest first (requires dashboard token)
+- `GET /api/share-memories/status` - Check whether the Share Your Memories placeholder tab is visible
+- `GET /api/wedding/phase` - Read the current `before` or `after` website phase
 - `GET /api/dashboard` - Get RSVP and feedback records with summary averages (requires dashboard token)
 - `PATCH /api/dashboard/feedback-status` - Turn feedback submissions on or off (requires dashboard token; JSON body: `{"enabled": true}`)
+- `PATCH /api/dashboard/rsvp-status` - Turn RSVP submissions on or off (requires dashboard token; JSON body: `{"enabled": true}`)
+- `PATCH /api/dashboard/memory-sharing-status` - Show or hide the Share Your Memories tab (requires dashboard token; JSON body: `{"enabled": true}`)
+- `PATCH /api/dashboard/wedding-phase` - Switch guest-facing copy between `before` and `after` (requires dashboard token; JSON body: `{"phase": "after"}`)
 
-Set `ADMIN_DASHBOARD_TOKEN` in `server/.env` for local use and in the Render service environment for production. Open the app's `/dashboard` page and enter the same token; it is sent in an Authorization header and kept in page memory only. The dashboard switch is persisted in the database, and open feedback pages check availability every three seconds. Submissions are also rejected by the server while feedback is closed. Do not configure this token as a `VITE_` frontend variable.
+Set `ADMIN_DASHBOARD_TOKEN` in `server/.env` for local use and in the Render service environment for production. Open the app's `/dashboard` page and enter the same token; it is sent in an Authorization header and kept in page memory only. The dashboard switches and website phase are persisted in the database. Guest pages refresh availability and phase every few seconds. The Share Your Memories tab is a placeholder only; guest uploads are not implemented yet. Do not configure this token as a `VITE_` frontend variable.
 
 ### Health Check
 - `GET /api/health` - Server health status

@@ -1,6 +1,7 @@
 import express from 'express';
 import { 
   createRSVP, 
+  getRSVPStatus,
   getAllRSVPs, 
   getRSVPCount 
 } from '../controllers/rsvpController.js';
@@ -14,6 +15,7 @@ const router = express.Router();
 
 // POST /api/rsvp - Create new RSVP
 router.post('/', validateRSVP, handleValidationErrors, createRSVP);
+router.get('/status', getRSVPStatus);
 
 // GET /api/rsvp - Get all RSVPs (admin only)
 router.get('/', requireAdminToken, getAllRSVPs);

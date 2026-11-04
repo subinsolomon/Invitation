@@ -2,18 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   Design tokens — "Ink & Champagne"
+   Warm, editorial, high-contrast. No sparkles: motion comes from light,
+   depth, hairlines and spatial transitions.
+   ========================================================================== */
 :root {
   color-scheme: dark;
-  --ink: #e8f1f8;
-  --muted-ink: #a8bac9;
-  --canvas: #101c2a;
-  --canvas-deep: #08111b;
-  --surface: rgba(210, 231, 247, 0.075);
-  --surface-strong: rgba(210, 231, 247, 0.13);
-  --line: rgba(203, 225, 242, 0.16);
-  --accent: #79bce3;
-  --accent-soft: rgba(121, 188, 227, 0.16);
-  --shadow: rgba(0, 0, 0, 0.32);
+
+  --ink: #F2EBE1;
+  --ink-soft: #C8BCAE;
+  --ink-muted: #9A8C7C;
+
+  --canvas: #0C0A08;
+  --canvas-soft: #141110;
+  --canvas-lift: #1B1715;
+
+  --surface: rgba(242, 235, 225, 0.045);
+  --surface-strong: rgba(242, 235, 225, 0.08);
+  --line: rgba(242, 235, 225, 0.11);
+  --line-strong: rgba(242, 235, 225, 0.2);
+
+  --gold: #E3C07A;
+  --gold-soft: rgba(227, 192, 122, 0.16);
+  --gold-line: rgba(227, 192, 122, 0.34);
+  --clay: #D08C7C;
+
+  --shadow-ambient: 0 2rem 5rem -2rem rgba(0, 0, 0, 0.85);
+
+  --nav-height: 5rem;
+  --gutter: clamp(1.25rem, 4vw, 3.5rem);
+  --ease-swift: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * {
@@ -24,213 +43,541 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  font-family: 'Poppins', sans-serif;
-  color: var(--ink);
-  background:
-    radial-gradient(circle at 12% 8%, var(--accent-soft), transparent 28rem),
-    radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.05), transparent 24rem),
-    var(--canvas);
   min-height: 100vh;
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 16px;
+  color: var(--ink);
+  background-color: var(--canvas);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.45s ease, color 0.45s ease;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Playfair Display', serif;
+/* Ambient light: slow warm fields behind everything. Decorative only. */
+.ambient-light {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(58rem 40rem at 12% -8%, rgba(227, 192, 122, 0.16), transparent 62%),
+    radial-gradient(48rem 34rem at 88% 6%, rgba(208, 140, 124, 0.11), transparent 66%),
+    radial-gradient(70rem 50rem at 50% 108%, rgba(200, 145, 58, 0.12), transparent 70%),
+    linear-gradient(180deg, #0E0B09 0%, #0C0A08 46%, #0A0807 100%);
 }
 
-blockquote {
-  font-family: 'Playfair Display', serif;
+.ambient-light::before,
+.ambient-light::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.55;
+}
+
+.ambient-light::before {
+  width: 46rem;
+  height: 34rem;
+  top: -12rem;
+  left: -10rem;
+  background: radial-gradient(circle, rgba(227, 192, 122, 0.22), transparent 68%);
+  animation: drift 26s ease-in-out infinite alternate;
+}
+
+.ambient-light::after {
+  width: 40rem;
+  height: 30rem;
+  right: -12rem;
+  bottom: -10rem;
+  background: radial-gradient(circle, rgba(208, 140, 124, 0.18), transparent 70%);
+  animation: drift 38s ease-in-out infinite alternate-reverse;
+}
+
+/* Film grain: stops large flat areas from banding, adds print-like texture. */
+.grain-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.32;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.55'/></svg>");
+  background-size: 140px 140px;
+}
+
+/* Cursor-following warm light. Coordinates written by <PointerGlow />. */
+.pointer-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s var(--ease-swift);
+  background: radial-gradient(
+    24rem 24rem at var(--pointer-x, 50%) var(--pointer-y, 50%),
+    rgba(227, 192, 122, 0.09),
+    transparent 65%
+  );
+}
+
+.pointer-glow[data-active='true'] {
+  opacity: 1;
+}
+
+h1, h2, h3, h4, h5, h6, blockquote {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 ::selection {
-  color: var(--canvas-deep);
-  background: var(--accent);
+  color: var(--canvas);
+  background: var(--gold);
 }
 
-a,
-button,
-input,
-textarea,
-select {
+a, button, input, textarea, select {
   -webkit-tap-highlight-color: transparent;
+  font: inherit;
+  color: inherit;
 }
 
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--accent);
+select:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--gold);
   outline-offset: 3px;
+  border-radius: 4px;
 }
 
-.page-shell {
-  position: relative;
-  isolation: isolate;
-  min-height: calc(100vh - 5rem);
-}
-
-.page-shell::before {
-  content: '';
-  position: fixed;
-  inset: 5rem 0 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.5;
-  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
-  background-size: 4rem 4rem;
-  mask-image: linear-gradient(to bottom, black, transparent 75%);
-}
-
-.glass-surface {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  box-shadow: 0 1.5rem 4rem var(--shadow);
-  backdrop-filter: blur(1.2rem);
-}
-
-.eyebrow {
-  color: var(--accent);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  line-height: 1.4;
-  text-transform: uppercase;
-}
-
-.wedding-name-shimmer {
-  color: transparent;
-  background-clip: text;
-  -webkit-background-clip: text;
-  background-size: 220% 100%;
-  animation: name-shimmer 7s ease-in-out infinite;
-}
-
-.intro-seal {
-  border-color: rgba(125, 211, 252, 0.24);
-  box-shadow: 0 2rem 7rem rgba(0, 0, 0, 0.42), 0 0 4rem rgba(56, 189, 248, 0.1);
-}
-
-@keyframes name-shimmer {
-  0%, 100% { background-position: 100% 50%; }
-  50% { background-position: 0% 50%; }
-}
-
-/* Custom animations */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-/* Smooth transitions */
-a {
-  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
-}
-
-button {
-  transition: all 0.3s ease;
-}
-
-input, textarea, select {
-  transition: all 0.3s ease;
-}
-
-/* Mobile-first responsive utilities */
-@media (max-width: 640px) {
-  body {
-    font-size: 14px;
-  }
-
-  h1 {
-    font-size: 1.875rem;
-  }
-
-  h2 {
-    font-size: 1.5rem;
-  }
-
-  h3 {
-    font-size: 1.25rem;
-  }
-}
-
-/* Responsive spacing */
-@media (max-width: 768px) {
-  .container-responsive {
-    padding: 1rem;
-  }
-}
-
-/* Touch-friendly spacing for mobile */
-@media (max-width: 640px) {
-  button {
-    min-height: 44px;
-    min-width: 44px;
-  }
-
-  input, textarea, select {
-    min-height: 44px;
-  }
-}
-
-/* Prevent horizontal scroll on mobile */
-body, html {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-/* Responsive images */
 img {
   max-width: 100%;
   height: auto;
   display: block;
 }
 
-/* Better form handling on mobile */
-input[type="text"],
-input[type="email"],
-input[type="phone"],
-textarea,
-select {
-  font-size: 16px;
-  border-radius: 8px;
+/* ==========================================================================
+   Layout
+   ========================================================================== */
+.page-shell {
+  position: relative;
+  z-index: 3;
+  isolation: isolate;
+  min-height: calc(100vh - var(--nav-height));
 }
 
-/* Responsive grid */
-.grid-responsive {
-  display: grid;
-  gap: 1rem;
+.shell {
+  width: 100%;
+  max-width: 78rem;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
 }
 
-@media (min-width: 768px) {
-  .grid-responsive {
-    gap: 1.5rem;
+.section {
+  padding-block: clamp(3.5rem, 7vw, 6.5rem);
+}
+
+.hairline {
+  height: 1px;
+  width: 100%;
+  border: 0;
+  background: linear-gradient(90deg, transparent, var(--line-strong) 18%, var(--line-strong) 82%, transparent);
+}
+
+.hairline-gold {
+  height: 1px;
+  width: 100%;
+  border: 0;
+  background: linear-gradient(90deg, transparent, var(--gold-line), transparent);
+}
+
+/* ==========================================================================
+   Typography helpers
+   ========================================================================== */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--gold);
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  content: '';
+  width: 1.75rem;
+  height: 1px;
+  flex: none;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.display {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+
+.script {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+}
+
+.lede {
+  color: var(--ink-soft);
+  font-size: clamp(1rem, 1.1vw + 0.75rem, 1.15rem);
+  line-height: 1.75;
+  max-width: 46ch;
+}
+
+/* Gold foil text: a static gradient (no shimmer), used sparingly on names. */
+.foil {
+  color: transparent;
+  background-image: linear-gradient(168deg, #F6EAD0 4%, #E3C07A 38%, #C8913A 62%, #F0DDB4 96%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+/* ==========================================================================
+   Surfaces
+   ========================================================================== */
+.card,
+.glass-surface {
+  position: relative;
+  border-radius: 1.5rem;
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, rgba(242, 235, 225, 0.07), rgba(242, 235, 225, 0.025) 45%, rgba(12, 10, 8, 0.32));
+  box-shadow: var(--shadow-ambient);
+  backdrop-filter: blur(14px) saturate(115%);
+  -webkit-backdrop-filter: blur(14px) saturate(115%);
+}
+
+/* Hairline that lights up on hover — used on cards and list rows. */
+.card-edge::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-swift);
+  background: linear-gradient(140deg, rgba(227, 192, 122, 0.55), transparent 42%, rgba(227, 192, 122, 0.25));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.card-edge:hover::before,
+.card-edge:focus-within::before {
+  opacity: 1;
+}
+
+/* Pointer-tracked highlight, coordinates written by <SpotlightCard />. */
+.spotlight::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.45s var(--ease-swift);
+  background: radial-gradient(
+    18rem 18rem at var(--spot-x, 50%) var(--spot-y, 50%),
+    rgba(227, 192, 122, 0.14),
+    transparent 62%
+  );
+}
+
+.spotlight:hover::after,
+.spotlight:focus-within::after {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 2.9rem;
+  padding: 0.8rem 1.6rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.4s var(--ease-swift), background-color 0.4s var(--ease-swift),
+    border-color 0.4s var(--ease-swift), color 0.4s var(--ease-swift), box-shadow 0.4s var(--ease-swift);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Light sweep on hover — replaces the old sparkle flourish. */
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform: translateX(-130%) skewX(-14deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: transform 0.85s var(--ease-swift);
+}
+
+.btn:hover::after {
+  transform: translateX(130%) skewX(-14deg);
+}
+
+.btn-primary {
+  background: linear-gradient(140deg, #F0DDB4, #E3C07A 42%, #C8913A);
+  color: #1A1206;
+  box-shadow: 0 0.75rem 2rem -0.75rem rgba(200, 145, 58, 0.65);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 1rem 2.75rem -0.75rem rgba(200, 145, 58, 0.85);
+}
+
+.btn-ghost {
+  border-color: var(--line-strong);
+  background: rgba(242, 235, 225, 0.03);
+  color: var(--ink);
+}
+
+.btn-ghost:hover {
+  border-color: var(--gold-line);
+  background: rgba(242, 235, 225, 0.07);
+  color: #F6EAD0;
+}
+
+.btn-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0.55rem 1.05rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.35s var(--ease-swift), border-color 0.35s var(--ease-swift), background-color 0.35s var(--ease-swift);
+}
+
+.btn-quiet:hover {
+  color: var(--ink);
+  border-color: var(--line-strong);
+  background: rgba(242, 235, 225, 0.05);
+}
+
+.btn-quiet:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Arrow that nudges on hover of its parent link/button. */
+.btn .arrow,
+.btn-quiet .arrow {
+  transition: transform 0.45s var(--ease-swift);
+}
+
+.btn:hover .arrow {
+  transform: translate(0.18rem, -0.18rem);
+}
+
+/* ==========================================================================
+   Forms
+   ========================================================================== */
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--ink-soft);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.field {
+  width: 100%;
+  min-height: 3.1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--line);
+  background: rgba(12, 10, 8, 0.5);
+  color: var(--ink);
+  font-size: 1rem;
+  transition: border-color 0.35s var(--ease-swift), background-color 0.35s var(--ease-swift),
+    box-shadow 0.35s var(--ease-swift);
+}
+
+.field::placeholder {
+  color: rgba(200, 188, 174, 0.45);
+}
+
+.field:hover {
+  border-color: var(--line-strong);
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--gold-line);
+  background: rgba(12, 10, 8, 0.72);
+  box-shadow: 0 0 0 3px rgba(227, 192, 122, 0.12);
+}
+
+.field[aria-invalid='true'] {
+  border-color: rgba(208, 140, 124, 0.7);
+  box-shadow: 0 0 0 3px rgba(208, 140, 124, 0.1);
+}
+
+.field-error {
+  margin-top: 0.4rem;
+  color: #E8AEA2;
+  font-size: 0.78rem;
+}
+
+/* ==========================================================================
+   Small pieces
+   ========================================================================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(242, 235, 225, 0.05);
+  color: var(--ink-soft);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  flex: none;
+  animation: marquee 42s linear infinite;
+}
+
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* Masked reveal wrapper: content slides up from behind its own edge. */
+.mask-reveal {
+  overflow: hidden;
+  display: block;
+}
+
+/* Scroll progress rail pinned to the top of the viewport. */
+.scroll-rail {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 60;
+  height: 2px;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, #C8913A, #E3C07A 55%, #F0DDB4);
+  box-shadow: 0 0 12px rgba(227, 192, 122, 0.45);
+}
+
+/* ==========================================================================
+   Responsive ergonomics
+   ========================================================================== */
+@media (max-width: 640px) {
+  :root {
+    --nav-height: 4.5rem;
+  }
+
+  body {
+    font-size: 15px;
+  }
+
+  .field,
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* prevents iOS zoom-on-focus */
+    min-height: 2.9rem;
+  }
+
+  .grain-layer {
+    opacity: 0.22;
   }
 }
 
-input:focus, textarea:focus, select:focus { outline: none; }
+@media (hover: none) {
+  .pointer-glow {
+    display: none;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .wedding-name-shimmer {
-    animation: none;
-    background-position: 50% 50%;
-  }
-
   html {
     scroll-behavior: auto;
+  }
+
+  .ambient-light::before,
+  .ambient-light::after,
+  .marquee-track,
+  .btn::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .btn:hover::after {
+    transform: translateX(-130%) skewX(-14deg);
+  }
+
+  .pointer-glow {
+    display: none;
   }
 
   *,

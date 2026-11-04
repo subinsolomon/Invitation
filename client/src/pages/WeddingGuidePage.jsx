@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
-import { useTheme } from '../context/ThemeContext';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import PageHeader from '../components/PageHeader';
+import Reveal from '../components/motion/Reveal';
+import SpotlightCard from '../components/motion/SpotlightCard';
 import { configService } from '../services/api';
+import { EASE_SWIFT } from '../lib/motion';
+import { useWeddingPhase } from '../context/WeddingPhaseContext';
 
 const fallbackEvent = {
-  weddingDate: '2027-05-08T14:00:00',
-  location: 'Chavadiyil Jehoash Gardens, Pooyappally, Kerala, India',
-  coordinates: { lat: 8.903304700132821, lng: 76.76278418645106 },
+    answer: 'Please use the RSVP page to let us know whether you can attend, or simply show up on the day.',
 };
 
-const escapeCalendarText = (value) => String(value).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+const escapeCalendarText = (value) =>
+  String(value).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
 
 const calendarDateInKerala = (value) => {
   const rawValue = String(value);
@@ -63,116 +66,231 @@ const downloadCalendarInvite = (event) => {
 };
 
 const faqs = [
-  { question: 'When is the wedding?', answer: 'Saturday, May 8, 2027. The ceremony begins at 02:00 PM India Standard Time.' },
-  { question: 'Where is the celebration?', answer: 'Chavadiyil Jehoash Gardens, Pooyappally, Kerala, India. Use the map links on this page for directions.' },
-  { question: 'How do I respond?', answer: 'Please use the RSVP page to let us know whether you can attend, or simply show up.' },
+  {
+    question: 'When is the wedding?',
+    answer: 'Saturday, May 8, 2027. The ceremony begins at 02:00 PM India Standard Time.',
+  },
+  {
+    question: 'Where is the celebration?',
+    answer:
+      'Chavadiyil Jehoash Gardens, Pooyappally, Kerala, India. Use the map links on this page for directions.',
+  },
+  {
+    question: 'How do I respond?',
+    answer:
+      'Please use the RSVP page to let us know whether you can attend, or simply show up on the day.',
+  },
 ];
 
-export const WeddingGuidePage = () => {
-  const { currentTheme } = useTheme();
+const FaqItem = ({ question, answer, index }) => {
+  const [isOpen, setIsOpen] = useState(index === 0);
   const prefersReducedMotion = useReducedMotion();
+
+  return (
+    <div className="border-b border-ink-100/10">
+      <button
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+        aria-expanded={isOpen}
+        className="flex w-full items-center justify-between gap-6 py-5 text-left transition-colors duration-300 hover:text-gold-100"
+      >
+        <span className="flex items-baseline gap-4">
+          <span className="font-mono text-[0.6rem] tracking-[0.28em] text-ink-500">
+            {String(index + 1).padStart(2, '0')}
+          </span>
+          <span className="text-lg text-ink-100">{question}</span>
+        </span>
+        <motion.span
+          className="relative grid h-7 w-7 shrink-0 place-items-center rounded-full border border-ink-100/15 text-gold-200"
+          animate={{ rotate: isOpen ? 135 : 0 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: EASE_SWIFT }}
+          aria-hidden="true"
+        >
+          <span className="absolute h-px w-3 bg-current" />
+          <span className="absolute h-3 w-px bg-current" />
+        </motion.span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: EASE_SWIFT }}
+            className="overflow-hidden"
+          >
+            <p className="max-w-2xl pb-6 pl-10 text-sm leading-relaxed text-ink-300">{answer}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export const WeddingGuidePage = () => {
+  const { weddingPhase } = useWeddingPhase();
+  const isAfterWedding = weddingPhase === 'after';
+  const phaseFaqs = faqs.map((item) => item.question === 'How do I respond?'
+    ? {
+        ...item,
+        answer: isAfterWedding
+          ? 'The celebration has passed. Thank you for being part of it — revisit Our Moments and Event Memories to relive the day.'
+          : item.answer,
+      }
+    : item);
   const [event, setEvent] = useState(fallbackEvent);
 
   useEffect(() => {
     let active = true;
-    configService.getConfig()
+    configService
+      .getConfig()
       .then((config) => {
-        if (active) setEvent({ ...fallbackEvent, ...config, coordinates: config.coordinates || fallbackEvent.coordinates });
+        if (active) {
+          setEvent({ ...fallbackEvent, ...config, coordinates: config.coordinates || fallbackEvent.coordinates });
+        }
       })
       .catch((error) => console.error('Failed to load ceremony details:', error));
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
   const coordinates = event.coordinates;
-  const mapUrl = coordinates?.lat && coordinates?.lng
-    ? `https://www.google.com/maps/search/?api=1&query=${coordinates.lat},${coordinates.lng}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`;
-  const directionsUrl = coordinates?.lat && coordinates?.lng
-    ? `https://www.google.com/maps/dir/?api=1&destination=${coordinates.lat},${coordinates.lng}`
-    : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(event.location)}`;
+  const mapUrl =
+    coordinates?.lat && coordinates?.lng
+      ? `https://www.google.com/maps/search/?api=1&query=${coordinates.lat},${coordinates.lng}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`;
+  const directionsUrl =
+    coordinates?.lat && coordinates?.lng
+      ? `https://www.google.com/maps/dir/?api=1&destination=${coordinates.lat},${coordinates.lng}`
+      : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(event.location)}`;
+  const mapEmbedSrc =
+    coordinates?.lat && coordinates?.lng
+      ? `https://www.google.com/maps?q=${coordinates.lat},${coordinates.lng}&output=embed`
+      : `https://www.google.com/maps?q=${encodeURIComponent(event.location)}&output=embed`;
 
   return (
-    <motion.main
-      className="min-h-[calc(100vh-5rem)] px-4 pb-14 pt-8 sm:px-6 sm:pt-12"
-      initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: prefersReducedMotion ? 0.15 : 0.42 }}
-    >
-      <div className="mx-auto max-w-5xl">
-        <header className="mb-10 flex flex-col gap-6 border-b border-white/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="eyebrow mb-3">The day, at a glance</p>
-            <h1 className="font-serif text-4xl font-semibold sm:text-5xl" style={{ color: currentTheme.accentColor }}>
-              Ceremony details
-            </h1>
-            <p className="mt-3 text-white/65">Sajini weds Subin · Saturday, May 8, 2027</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => downloadCalendarInvite(event)}
-            className="inline-flex min-h-12 items-center justify-center gap-2 self-start rounded-lg border border-sky-300/30 bg-sky-300/10 px-5 text-sm font-semibold text-sky-100 transition-colors hover:bg-sky-300/20 sm:self-auto"
-          >
-            <span aria-hidden="true">&#8595;</span> Add to calendar
+    <div className="shell pb-24">
+      <PageHeader
+        eyebrow={isAfterWedding ? 'A day to remember' : 'The day, at a glance'}
+        title={isAfterWedding ? 'Our wedding' : 'Ceremony'}
+        accent={isAfterWedding ? 'day' : 'details'}
+        lede={isAfterWedding
+          ? 'Thank you for sharing May 8, 2027 with us. We are grateful for every moment we spent together.'
+          : 'Sajini weds Subin on Saturday, May 8, 2027 at Chavadiyil Jehoash Gardens, Pooyappally. Here is everything you need to arrive calmly and on time.'}
+        actions={!isAfterWedding && (
+          <button type="button" onClick={() => downloadCalendarInvite(event)} className="btn btn-primary">
+            <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M8 2v8m0 0 3-3m-3 3L5 7M3 12.5h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Add to calendar
           </button>
-        </header>
+        )}
+      />
 
-        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-          <section aria-labelledby="schedule-title">
-            <p className="eyebrow mb-2">Schedule</p>
-            <h2 id="schedule-title" className="mb-5 font-serif text-2xl text-white">Saturday, May 8</h2>
-            <ol className="border-l border-sky-300/25 pl-5">
-              <li className="relative pb-7">
-                <span className="absolute -left-[1.57rem] top-1 h-3 w-3 rounded-full border-2 border-sky-200 bg-slate-950" />
-                <p className="text-sm font-semibold text-sky-200">02:00 PM</p>
-                <h3 className="mt-1 text-lg font-medium text-white">Wedding ceremony</h3>
-                <p className="mt-1 text-sm text-white/55">Chavadiyil Jehoash Gardens</p>
-              </li>
-            </ol>
+      <div className="mt-14 grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+        <section aria-labelledby="schedule-title">
+          <Reveal variant="fade">
+            <p className="eyebrow mb-3">Schedule</p>
+          </Reveal>
+          <Reveal delay={0.06}>
+            <h2 id="schedule-title" className="display text-3xl text-ink-50">
+              {isAfterWedding ? 'The day we shared' : 'Saturday, May 8'}
+            </h2>
+          </Reveal>
 
-            <div className="mt-9 flex flex-wrap gap-3">
-              <a href={directionsUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-semibold text-slate-950" style={{ backgroundColor: currentTheme.accentColor }}>
-                Get directions <span className="ml-2" aria-hidden="true">&#8599;</span>
+          <div className="mt-9">
+            <Reveal delay={0.12} variant="fade">
+              <div className="relative pl-8">
+                <span className="absolute left-[0.28rem] top-2 h-full w-px bg-gradient-to-b from-gold-300/60 via-ink-100/20 to-transparent" aria-hidden="true" />
+                <span className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full border border-gold-300 bg-ink-950 shadow-[0_0_14px_rgba(227,192,122,0.45)]" aria-hidden="true" />
+
+                <p className="font-mono text-xs tracking-[0.24em] text-gold-300">14:00 IST</p>
+                <h3 className="mt-2 text-2xl text-ink-50">Wedding ceremony</h3>
+                <p className="mt-1 text-sm text-ink-300">Chavadiyil Jehoash Gardens</p>
+
+                {isAfterWedding && (
+                  <p className="mt-6 max-w-sm text-sm leading-relaxed text-ink-400">
+                    Thank you to everyone who joined us and made this day so meaningful.
+                  </p>
+                )}
+              </div>
+            </Reveal>
+          </div>
+
+          <Reveal variant="fade" delay={0.18}>
+            <div className="mt-10 flex flex-wrap gap-3">
+              <a href={directionsUrl} target="_blank" rel="noreferrer" className="btn btn-primary">
+                Get directions
+                <svg className="arrow h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M4 12 12 4M12 4H5.5M12 4v6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </a>
-              <a href={mapUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-lg border border-white/15 px-4 text-sm font-medium text-white/80 hover:bg-white/5">
+              <a href={mapUrl} target="_blank" rel="noreferrer" className="btn btn-ghost">
                 Open map
               </a>
             </div>
-          </section>
+          </Reveal>
+        </section>
 
-          <section aria-labelledby="travel-title" className="border-t border-white/10 pt-8 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
-            <p className="eyebrow mb-2">Getting there</p>
-            <h2 id="travel-title" className="font-serif text-2xl text-white">Venue &amp; travel</h2>
-            <p className="mt-4 text-lg text-white">Chavadiyil Jehoash Gardens</p>
-            <p className="mt-1 text-sm leading-6 text-white/60">Pooyappally, Kerala, India</p>
-            <iframe
-              title="Map to Chavadiyil Jehoash Gardens"
-              className="mt-6 h-64 w-full rounded-xl border border-white/10 bg-slate-900"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              src={coordinates?.lat && coordinates?.lng
-                ? `https://www.google.com/maps?q=${coordinates.lat},${coordinates.lng}&output=embed`
-                : `https://www.google.com/maps?q=${encodeURIComponent(event.location)}&output=embed`}
-            />
-          </section>
-        </div>
+        <section aria-labelledby="venue-title">
+          <Reveal variant="fade">
+            <p className="eyebrow mb-3">Getting there</p>
+          </Reveal>
+          <Reveal delay={0.06}>
+            <h2 id="venue-title" className="display text-3xl text-ink-50">
+              Venue & travel
+            </h2>
+          </Reveal>
 
-        <section className="mt-14 border-t border-white/10 pt-8" aria-labelledby="faq-title">
-          <p className="eyebrow mb-2">Helpful details</p>
-          <h2 id="faq-title" className="mb-5 font-serif text-2xl text-white">Frequently asked questions</h2>
-          <div className="divide-y divide-white/10">
-            {faqs.map((item) => (
-              <details key={item.question} className="group py-4">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-white marker:hidden">
-                  {item.question}
-                  <span className="text-lg text-sky-200 transition-transform group-open:rotate-45" aria-hidden="true">+</span>
-                </summary>
-                <p className="max-w-3xl pt-3 text-sm leading-6 text-white/60">{item.answer}</p>
-              </details>
-            ))}
-          </div>
+          <Reveal delay={0.12}>
+            <SpotlightCard className="mt-8 overflow-hidden p-0" lift={false}>
+              <div className="p-6 sm:p-7">
+                <p className="font-serif text-2xl text-ink-50">Chavadiyil Jehoash Gardens</p>
+                <p className="mt-1.5 text-sm text-ink-300">Pooyappally, Kollam, Kerala, India</p>
+              </div>
+              <iframe
+                title="Map to Chavadiyil Jehoash Gardens"
+                className="h-64 w-full border-t border-ink-100/10 grayscale-[0.35] contrast-[0.95] sm:h-72"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                src={mapEmbedSrc}
+              />
+            </SpotlightCard>
+          </Reveal>
+
+          <Reveal variant="fade" delay={0.2}>
+            <dl className="mt-8 grid grid-cols-2 gap-6 border-t border-ink-100/10 pt-6 text-sm">
+              <div>
+                <dt className="text-[0.6rem] font-semibold uppercase tracking-label text-ink-500">{isAfterWedding ? 'Ceremony' : 'Arrive by'}</dt>
+                <dd className="mt-1.5 text-ink-100">{isAfterWedding ? '2:00 PM IST' : '1:30 PM'}</dd>
+              </div>
+              <div>
+                <dt className="text-[0.6rem] font-semibold uppercase tracking-label text-ink-500">Wedding date</dt>
+                <dd className="mt-1.5 text-ink-100">May 8, 2027</dd>
+              </div>
+            </dl>
+          </Reveal>
         </section>
       </div>
-    </motion.main>
+
+      <section className="mt-16 border-t border-ink-100/10 pt-10" aria-labelledby="faq-title">
+        <Reveal variant="fade">
+          <p className="eyebrow mb-3">Helpful details</p>
+        </Reveal>
+        <Reveal delay={0.06}>
+          <h2 id="faq-title" className="display mb-6 text-3xl text-ink-50">
+            Frequently asked questions
+          </h2>
+        </Reveal>
+        <div>
+          {phaseFaqs.map((item, index) => (
+            <FaqItem key={item.question} question={item.question} answer={item.answer} index={index} />
+          ))}
+        </div>
+      </section>
+    </div>
   );
 };
 
