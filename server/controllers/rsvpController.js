@@ -1,7 +1,21 @@
 import prisma from '../config/database.js';
+import { isRSVPEnabled } from '../services/feedbackSettings.js';
+
+export const getRSVPStatus = async (_req, res) => {
+  try {
+    res.json({ enabled: await isRSVPEnabled() });
+  } catch (error) {
+    console.error('Error checking RSVP status:', error);
+    res.status(500).json({ message: 'Unable to check RSVP availability.' });
+  }
+};
 
 export const createRSVP = async (req, res) => {
   try {
+    if (!(await isRSVPEnabled())) {
+      return res.status(403).json({ message: 'RSVP submissions are currently closed.' });
+    }
+
     const { name, email, phone, attendance } = req.body;
 
     // Check if email already exists

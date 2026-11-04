@@ -1,232 +1,90 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { useTheme } from '../context/ThemeContext';
+import { EASE_SWIFT } from '../lib/motion';
+
+/**
+ * The couple's names.
+ *
+ * Motion: each letter rises from behind its own clipping edge, staggered from
+ * the outside in. No shimmer, no sparkles — the effect is purely typographic
+ * and settles in under a second.
+ */
+const NameLine = ({ text, isVisible, delay = 0, className = '' }) => {
+  const prefersReducedMotion = useReducedMotion();
+  const letters = [...text];
+
+  const step = prefersReducedMotion ? 0 : 0.055;
+  const travel = prefersReducedMotion ? 0 : 105;
+
+  return (
+    <>
+      <span className="sr-only">{text}</span>
+      <span
+        aria-hidden="true"
+        className={`inline-flex flex-wrap justify-center whitespace-nowrap ${className}`}
+      >
+        {letters.map((letter, index) => (
+          <span key={`${letter}-${index}`} className="inline-block overflow-hidden pb-[0.06em]">
+            <motion.span
+              className="inline-block will-change-transform"
+              initial={{ y: `${travel}%`, opacity: prefersReducedMotion ? 0 : 1 }}
+              animate={isVisible ? { y: '0%', opacity: 1 } : { y: `${travel}%`, opacity: prefersReducedMotion ? 0 : 1 }}
+              transition={{
+                duration: prefersReducedMotion ? 0 : 0.95,
+                delay: prefersReducedMotion ? 0 : delay + index * step,
+                ease: EASE_SWIFT,
+              }}
+            >
+              {letter === ' ' ? '\u00A0' : letter}
+            </motion.span>
+          </span>
+        ))}
+      </span>
+    </>
+  );
+};
 
 export const WeddingNames = ({ brideName = 'Bride', groomName = 'Groom', isVisible = true }) => {
-  const { currentTheme } = useTheme();
   const prefersReducedMotion = useReducedMotion();
+  const ruleDelay = prefersReducedMotion ? 0 : 0.75;
 
-  // Split names into characters for animation
-  const brideChars = brideName.split('');
-  const groomChars = groomName.split('');
-
-  // Container variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: prefersReducedMotion ? 0 : 0.05,
-        delayChildren: prefersReducedMotion ? 0 : 0.2,
-      },
-    },
-  };
-
-  // Character animation variants - modern and smooth
-  const charVariants = {
-    hidden: {
-      opacity: 0,
-      y: prefersReducedMotion ? 0 : 20,
-      rotateX: prefersReducedMotion ? 0 : 90,
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
-      rotateX: 0,
-      transition: {
-        duration: prefersReducedMotion ? 0.15 : 0.6,
-        ease: 'easeOut',
-      },
-    },
-  };
-
-  // Name container with glow effect
-  const nameContainerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: prefersReducedMotion ? 0 : 0.02,
-        delayChildren: prefersReducedMotion ? 0 : 0.1,
-      },
-    },
-    hover: {
-      y: prefersReducedMotion ? 0 : [-5, 5, -5],
-      transition: {
-        duration: prefersReducedMotion ? 0 : 2,
-        repeat: prefersReducedMotion ? 0 : Infinity,
-        ease: 'easeInOut',
-      },
-    },
-  };
-
-  // Weds text with bounce
-  const wedsVariants = {
-    hidden: {
-      opacity: 0,
-      scale: 0,
-      y: 30,
-    },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      y: 0,
-      transition: {
-        type: 'spring',
-        stiffness: 100,
-        damping: 15,
-        duration: 0.8,
-      },
-    },
-  };
-
-  // Decorative ornament animation
-  const decorVariants = {
-    hidden: {
-      opacity: 0,
-      scale: 0,
-      rotate: -180,
-    },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      rotate: 0,
-      transition: {
-        type: 'spring',
-        stiffness: 120,
-        damping: 12,
-        duration: 0.6,
-      },
-    },
-  };
-
-  // Separator line animation
-  const lineVariants = {
-    hidden: { scaleX: 0, opacity: 0 },
-    visible: {
-      scaleX: 1,
-      opacity: 1,
-      transition: {
-        delay: 1.5,
-        duration: 1,
-        ease: 'easeOut',
-      },
-    },
+  const ruleMotion = {
+    initial: { scaleX: 0 },
+    animate: isVisible ? { scaleX: 1 } : { scaleX: 0 },
+    transition: { duration: prefersReducedMotion ? 0 : 1.1, delay: ruleDelay, ease: EASE_SWIFT },
   };
 
   return (
-    <motion.div
-      className="flex flex-col items-center justify-center gap-4 xs:gap-6 sm:gap-8 md:gap-10 lg:gap-12 py-8 xs:py-12 sm:py-16 md:py-20 lg:py-24 px-3 xs:px-4"
-      initial="hidden"
-      animate={isVisible ? 'visible' : 'hidden'}
-    >
-      {/* Bride's Name - Character by Character Animation */}
-      <motion.div
-        className="flex flex-wrap justify-center"
-        variants={nameContainerVariants}
-        initial="hidden"
-        animate={isVisible ? 'visible' : 'hidden'}
-        whileHover="hover"
-      >
-        {brideChars.map((char, index) => (
+    <div className="group flex flex-col items-center text-center">
+      <h1 className="display text-[clamp(2.75rem,10vw,6.5rem)] leading-[0.92]">
+        <span className="block text-ink-50 transition-[letter-spacing] duration-700 ease-swift group-hover:tracking-[0.015em]">
+          <NameLine text={brideName} isVisible={isVisible} delay={0.1} />
+        </span>
+
+        <span className="my-[0.18em] flex items-center justify-center gap-4 sm:gap-6" aria-hidden="true">
           <motion.span
-            key={`bride-${index}`}
-            className="wedding-name-shimmer text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold inline-block"
-            style={{
-              backgroundImage: `linear-gradient(100deg, ${currentTheme.accentColor} 15%, #f8fafc 48%, ${currentTheme.accentColor} 82%)`,
-              textShadow: `0 10px 30px ${currentTheme.accentColor}40, 0 0 20px ${currentTheme.accentColor}60`,
-              letterSpacing: '0.02em',
-              perspective: '1000px',
-            }}
-            variants={charVariants}
-          >
-            {char === ' ' ? '\u00A0' : char}
-          </motion.span>
-        ))}
-      </motion.div>
-
-      {/* Decorative Element and Weds Section */}
-      <motion.div
-        className="flex items-center justify-center gap-2 xs:gap-3 sm:gap-4 md:gap-6 lg:gap-8"
-        variants={containerVariants}
-        initial="hidden"
-        animate={isVisible ? 'visible' : 'hidden'}
-      >
-        {/* Left Decorative ornament */}
-        <motion.div
-          variants={decorVariants}
-          className="hidden sm:block text-lg sm:text-xl md:text-2xl lg:text-3xl"
-          style={{
-            color: currentTheme.accentColor,
-            filter: `drop-shadow(0 0 10px ${currentTheme.accentColor}40)`,
-          }}
-        >
-          ✨
-        </motion.div>
-
-        {/* Weds Text */}
-        <motion.span
-          className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-script italic font-bold"
-          style={{
-            color: currentTheme.accentColor,
-            textShadow: `0 10px 30px ${currentTheme.accentColor}40, 0 0 20px ${currentTheme.accentColor}60`,
-            letterSpacing: '0.05em',
-          }}
-          variants={wedsVariants}
-        >
-          weds
-        </motion.span>
-
-        {/* Right Decorative ornament */}
-        <motion.div
-          variants={decorVariants}
-          className="hidden sm:block text-lg sm:text-xl md:text-2xl lg:text-3xl"
-          style={{
-            color: currentTheme.accentColor,
-            filter: `drop-shadow(0 0 10px ${currentTheme.accentColor}40)`,
-          }}
-        >
-          ✨
-        </motion.div>
-      </motion.div>
-
-      {/* Groom's Name - Character by Character Animation */}
-      <motion.div
-        className="flex flex-wrap justify-center"
-        variants={nameContainerVariants}
-        initial="hidden"
-        animate={isVisible ? 'visible' : 'hidden'}
-        whileHover="hover"
-      >
-        {groomChars.map((char, index) => (
+            className="h-px w-10 origin-right bg-gradient-to-l from-gold-300/70 to-transparent sm:w-16"
+            {...ruleMotion}
+          />
           <motion.span
-            key={`groom-${index}`}
-            className="wedding-name-shimmer text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold inline-block"
-            style={{
-              backgroundImage: `linear-gradient(100deg, ${currentTheme.accentColor} 15%, #f8fafc 48%, ${currentTheme.accentColor} 82%)`,
-              textShadow: `0 10px 30px ${currentTheme.accentColor}40, 0 0 20px ${currentTheme.accentColor}60`,
-              letterSpacing: '0.02em',
-              perspective: '1000px',
-            }}
-            variants={charVariants}
+            className="script text-[0.32em] leading-none tracking-[0.08em] text-gold-200"
+            initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+            animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: prefersReducedMotion ? 0 : 8 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.7, delay: prefersReducedMotion ? 0 : 0.6, ease: EASE_SWIFT }}
           >
-            {char === ' ' ? '\u00A0' : char}
+            weds
           </motion.span>
-        ))}
-      </motion.div>
+          <motion.span
+            className="h-px w-10 origin-left bg-gradient-to-r from-gold-300/70 to-transparent sm:w-16"
+            {...ruleMotion}
+          />
+        </span>
 
-      {/* Decorative Separator Line */}
-      <motion.div
-        className="w-16 xs:w-20 sm:w-24 md:w-32 lg:w-40 h-1 rounded-full mt-4 xs:mt-6"
-        style={{
-          background: `linear-gradient(90deg, transparent, ${currentTheme.accentColor}, transparent)`,
-          boxShadow: `0 0 20px ${currentTheme.accentColor}80`,
-        }}
-        variants={lineVariants}
-        initial="hidden"
-        animate="visible"
-      />
-    </motion.div>
+        <span className="block text-ink-50 transition-[letter-spacing] duration-700 ease-swift group-hover:tracking-[0.015em]">
+          <NameLine text={groomName} isVisible={isVisible} delay={0.34} />
+        </span>
+      </h1>
+    </div>
   );
 };
 

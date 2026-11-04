@@ -1,20 +1,32 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext';
+import PageHeader from '../components/PageHeader';
+import Reveal from '../components/motion/Reveal';
 import { feedbackService } from '../services/api';
+import { EASE_SWIFT } from '../lib/motion';
+import { useWeddingPhase } from '../context/WeddingPhaseContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const FEEDBACK_PROMPT_KEY = 'guest_feedback_prompted';
+const PROMPT_AFTER_SCROLL_SECONDS = 10;
 
 const getApiUrl = (path) => (path?.startsWith('http') ? path : `${API_URL}${path}`);
 
+const DownloadIcon = ({ className = 'h-4 w-4' }) => (
+  <svg className={className} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M8 2v8m0 0 3-3m-3 3L5 7M3 12.5h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export const GuestPhotoPage = () => {
-  const { currentTheme } = useTheme();
+  const { weddingPhase } = useWeddingPhase();
+  const isAfterWedding = weddingPhase === 'after';
   const prefersReducedMotion = useReducedMotion();
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [downloadError, setDownloadError] = useState('');
   const [downloadingIds, setDownloadingIds] = useState(new Set());
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [feedbackEnabled, setFeedbackEnabled] = useState(false);
@@ -31,7 +43,7 @@ export const GuestPhotoPage = () => {
     }
   }
 
-  const showPromptIfFeedbackIsOpen = async () => {
+  const showPromptIfFeedbackIsOpen = useCallback(async () => {
     if (promptedThisSession.current || checkingPrompt.current) return;
     checkingPrompt.current = true;
 
@@ -52,7 +64,7 @@ export const GuestPhotoPage = () => {
     } finally {
       checkingPrompt.current = false;
     }
-  };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -80,11 +92,11 @@ export const GuestPhotoPage = () => {
       if (promptedThisSession.current) return;
       if (document.visibilityState !== 'visible' || window.scrollY <= 0) return;
       activeScrollSeconds.current += 1;
-      if (activeScrollSeconds.current >= 10) showPromptIfFeedbackIsOpen();
+      if (activeScrollSeconds.current >= PROMPT_AFTER_SCROLL_SECONDS) showPromptIfFeedbackIsOpen();
     }, 1000);
 
     return () => window.clearInterval(intervalId);
-  }, [feedbackEnabled]);
+  }, [feedbackEnabled, showPromptIfFeedbackIsOpen]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -97,7 +109,6 @@ export const GuestPhotoPage = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Fetch guest photos from backend API
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
@@ -105,21 +116,18 @@ export const GuestPhotoPage = () => {
         setError(null);
 
         const response = await fetch(`${API_URL}/api/guest-photos`);
-
         if (!response.ok) {
           throw new Error(`Failed to fetch photos: ${response.statusText}`);
         }
 
         const data = await response.json();
-
         if (data.success && Array.isArray(data.photos)) {
           setPhotos(data.photos);
-          if (data.photos.length) console.log(`✅ Loaded ${data.photos.length} guest photos from Google Drive`);
         } else {
           throw new Error('Guest photos returned an invalid photo list.');
         }
       } catch (err) {
-        console.error('❌ Error fetching guest photos:', err);
+        console.error('Error fetching guest photos:', err);
         setError('Guest photos could not load right now. Please try again later.');
       } finally {
         setLoading(false);
@@ -129,21 +137,17 @@ export const GuestPhotoPage = () => {
     fetchPhotos();
   }, []);
 
-  // Handle photo download
   const handleDownload = async (photo) => {
+    setDownloadError('');
     try {
-      setDownloadingIds(prev => new Set([...prev, photo.id]));
-      
+      setDownloadingIds((previous) => new Set([...previous, photo.id]));
+
       const response = await fetch(getApiUrl(photo.downloadProxyUrl));
-      
       if (!response.ok) {
         throw new Error('Failed to download photo');
       }
 
-      // Extract filename from photo name or create one
       const filename = photo.name || `guest-photo-${photo.id}.jpg`;
-      
-      // Create blob and download
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -154,138 +158,84 @@ export const GuestPhotoPage = () => {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(link);
 
-      console.log(`✅ Downloaded: ${filename}`);
       showPromptIfFeedbackIsOpen();
     } catch (err) {
-      console.error('❌ Error downloading photo:', err);
-      alert(`Error downloading photo: ${err.message}`);
+      console.error('Error downloading photo:', err);
+      setDownloadError('That photo could not be downloaded. Please try again.');
     } finally {
-      setDownloadingIds(prev => {
-        const next = new Set(prev);
+      setDownloadingIds((previous) => {
+        const next = new Set(previous);
         next.delete(photo.id);
         return next;
       });
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: prefersReducedMotion ? 0 : 0.1,
-        delayChildren: prefersReducedMotion ? 0 : 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: prefersReducedMotion ? 0.15 : 0.6 },
-    },
-  };
-
-  const photoVariants = {
-    hidden: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.94 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: { duration: prefersReducedMotion ? 0.18 : 0.5 },
-    },
-    hover: prefersReducedMotion ? {} : {
-      scale: 1.05,
-      transition: { duration: 0.3 },
-    },
-  };
-
   return (
-    <motion.div
-      className="min-h-screen px-4 pt-8 pb-8 sm:px-6 sm:pt-12 sm:pb-12"
-      style={{ backgroundColor: currentTheme.bgColor }}
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      <div className="mx-auto max-w-7xl">
-        {/* Header */}
-        <motion.div className="mb-12 max-w-2xl" variants={itemVariants}>
-          <p className="eyebrow mb-4">Shared memories</p>
-          <h1
-            className="mb-4 text-4xl font-bold sm:text-6xl"
-            style={{ color: currentTheme.accentColor }}
-          >
-            Guest Photos
-          </h1>
-          <p
-            className="max-w-2xl text-base leading-7 opacity-75 sm:text-lg"
-            style={{ color: currentTheme.textColor }}
-          >
-            Cherished moments from our celebration. Feel free to download and share your favorite memories!
-          </p>
-        </motion.div>
+    <div className="shell pb-24">
+      <PageHeader
+        eyebrow={isAfterWedding ? 'From the day we shared' : 'Coming after the celebration'}
+        title="Event"
+        accent="Memories"
+        lede={isAfterWedding
+          ? 'Photographs from the celebration. Open any picture, or download the ones you love.'
+          : 'Guest photographs from the celebration will be gathered here. Stay tuned.'}
+      />
 
-        {/* Loading State */}
-        {loading && (
-          <motion.div
-            className="flex items-center justify-center min-h-96"
-            variants={itemVariants}
-          >
-            <div className="text-center">
-              <div
-                className="w-12 h-12 rounded-full border-4 border-transparent mx-auto mb-4"
-                style={{
-                  borderTopColor: currentTheme.accentColor,
-                  animation: 'spin 1s linear infinite',
-                }}
-              />
-              <p style={{ color: currentTheme.textColor }}>Loading guest photos...</p>
-            </div>
-          </motion.div>
-        )}
+      {downloadError && (
+        <div className="mt-8 rounded-2xl border border-clay-400/35 bg-clay-500/10 px-5 py-4 text-sm text-clay-200" role="alert">
+          {downloadError}
+        </div>
+      )}
 
-        {/* Error State */}
-        {error && !loading && (
-          <motion.div
-            className="glass-surface rounded-2xl p-5 text-center text-sm xs:text-base"
-            variants={itemVariants}
-            role="alert"
-          >
-            <p className="text-white/75">{error}</p>
-          </motion.div>
-        )}
+      {loading && (
+        <div className="mt-12 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div
+              key={index}
+              className="aspect-[4/5] animate-pulse rounded-2xl border border-ink-100/10 bg-ink-100/[0.04]"
+              style={{ animationDelay: `${index * 80}ms` }}
+              aria-hidden="true"
+            />
+          ))}
+          <span className="sr-only" role="status">
+            Loading guest photographs
+          </span>
+        </div>
+      )}
 
-        {/* Photos Grid */}
-        {!loading && photos.length > 0 && (
-          <motion.div
-            className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 xs:gap-4 sm:gap-6"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            {photos.map((photo) => (
+      {error && !loading && (
+        <div className="mt-10 rounded-2xl border border-clay-400/35 bg-clay-500/10 px-5 py-4 text-sm text-clay-200" role="alert">
+          {error}
+        </div>
+      )}
+
+      {!loading && !error && photos.length > 0 && (
+        <div className="mt-12 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+          {photos.map((photo, index) => {
+            const isDownloading = downloadingIds.has(photo.id);
+            return (
               <motion.div
                 key={photo.id}
-                className="glass-surface group relative overflow-hidden rounded-2xl"
-                style={{ backgroundColor: currentTheme.secondaryColor }}
-                variants={photoVariants}
-                whileHover={prefersReducedMotion ? undefined : 'hover'}
+                className="group relative overflow-hidden rounded-2xl border border-ink-100/10 bg-ink-900"
+                initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{
+                  duration: prefersReducedMotion ? 0 : 0.55,
+                  delay: prefersReducedMotion ? 0 : Math.min(index * 0.035, 0.35),
+                  ease: EASE_SWIFT,
+                }}
               >
-                {/* Image Container */}
-                <div
-                  className="relative aspect-square overflow-hidden bg-gray-200"
-                >
-                  <motion.img
-                    layoutId={`guest-photo-${photo.id}`}
+                <div className="relative aspect-[4/5] overflow-hidden">
+                  <img
                     src={getApiUrl(photo.proxyUrl)}
-                    alt={photo.alt}
-                    className="w-full h-full object-cover"
+                    alt={photo.alt || photo.name || 'Guest photograph'}
+                    loading="lazy"
                     role="button"
                     tabIndex={0}
-                    aria-label={`View ${photo.alt || photo.name || 'guest photo'}`}
+                    aria-label={`View ${photo.alt || photo.name || 'guest photograph'}`}
+                    className="h-full w-full cursor-pointer object-cover transition-transform duration-[900ms] ease-swift group-hover:scale-[1.05]"
                     onClick={() => setSelectedPhoto(photo)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter' || event.key === ' ') {
@@ -293,94 +243,123 @@ export const GuestPhotoPage = () => {
                         setSelectedPhoto(photo);
                       }
                     }}
-                    whileHover={prefersReducedMotion ? undefined : { scale: 1.1 }}
-                    transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
                   />
 
-                  {/* Overlay with Download Button */}
-                  <motion.div
-                    className="pointer-events-none absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-all duration-300"
-                    initial={{ opacity: 0 }}
-                    whileHover={{ opacity: 1 }}
-                  >
-                    <motion.button
-                      className="pointer-events-auto px-3 xs:px-4 py-2 rounded-lg font-semibold text-white transition-all duration-300 text-xs xs:text-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownload(photo);
-                      }}
-                      disabled={downloadingIds.has(photo.id)}
-                      style={{
-                        backgroundColor: currentTheme.accentColor,
-                        opacity: downloadingIds.has(photo.id) ? 0.7 : 1,
-                      }}
-                      whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
-                      whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
+                  <span
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-950/85 via-ink-950/5 to-transparent opacity-80 transition-opacity duration-500"
+                    aria-hidden="true"
+                  />
+                  <span
+                    className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-transparent transition-colors duration-500 group-hover:ring-gold-300/40"
+                    aria-hidden="true"
+                  />
+
+                  <div className="absolute inset-x-3 bottom-3 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPhoto(photo)}
+                      className="text-[0.62rem] font-semibold uppercase tracking-label text-ink-100/80 transition-colors duration-300 hover:text-gold-200"
                     >
-                      {downloadingIds.has(photo.id) ? '⏳ Downloading...' : '⬇️ Download'}
-                    </motion.button>
-                  </motion.div>
+                      View
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDownload(photo)}
+                      disabled={isDownloading}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-ink-100/25 bg-ink-950/70 px-3 py-1.5 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-ink-100 backdrop-blur-sm transition-colors duration-300 hover:border-gold-300/50 hover:text-gold-100 disabled:opacity-60"
+                    >
+                      {isDownloading ? (
+                        <>
+                          <span className="h-3 w-3 animate-spin rounded-full border border-ink-100/40 border-t-ink-100" aria-hidden="true" />
+                          Saving
+                        </>
+                      ) : (
+                        <>
+                          <DownloadIcon className="h-3 w-3" />
+                          Save
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-
               </motion.div>
-            ))}
-          </motion.div>
-        )}
+            );
+          })}
+        </div>
+      )}
 
-        {/* Empty State */}
-        {!loading && photos.length === 0 && !error && (
-          <motion.div className="text-center py-12" variants={itemVariants}>
-            <div className="text-5xl xs:text-6xl mb-4">📷</div>
-            <p className="text-lg xs:text-xl" style={{ color: currentTheme.textColor }}>
-              Stay tuned
+      {!loading && !error && photos.length === 0 && (
+        <Reveal variant="fade">
+          <div className="card mt-12 px-6 py-16 text-center">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-gold-300/30 bg-gold-300/[0.06] text-gold-200">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="3" y="6" width="18" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.4" />
+                <path d="M8.5 6 10 3.8h4L15.5 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                <circle cx="12" cy="12.5" r="3.2" stroke="currentColor" strokeWidth="1.4" />
+              </svg>
+            </div>
+            <h2 className="mt-6 text-2xl text-ink-50">Stay tuned</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink-400">
+              Photos shared by guests will appear here soon.
             </p>
-            <p
-              className="text-xs xs:text-sm mt-2"
-              style={{ color: currentTheme.textColor, opacity: 0.7 }}
-            >
-              Photos will be added here soon.
-            </p>
-          </motion.div>
-        )}
-      </div>
+          </div>
+        </Reveal>
+      )}
 
       <AnimatePresence>
         {selectedPhoto && (
           <motion.div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 p-3 backdrop-blur-xl sm:p-6"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-ink-950/94 p-3 backdrop-blur-xl sm:p-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
             onClick={() => setSelectedPhoto(null)}
             role="dialog"
             aria-modal="true"
-            aria-label={`${selectedPhoto.alt || selectedPhoto.name || 'Guest'} photo viewer`}
+            aria-label="Guest photograph viewer"
           >
             <motion.div
-              className="relative w-full max-w-5xl overflow-hidden rounded-2xl border border-sky-300/30 bg-slate-950/90 p-2 shadow-2xl sm:p-4"
+              className="relative w-full max-w-4xl"
               onClick={(event) => event.stopPropagation()}
               initial={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.97 }}
-              transition={{ duration: prefersReducedMotion ? 0.15 : 0.3 }}
+              exit={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.98 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.35, ease: EASE_SWIFT }}
             >
-              <button
-                type="button"
-                aria-label="Close photo viewer"
-                className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-slate-950/75 text-2xl text-white"
-                onClick={() => setSelectedPhoto(null)}
-              >
-                &times;
-              </button>
-              <motion.img
-                layoutId={`guest-photo-${selectedPhoto.id}`}
+              <img
                 src={getApiUrl(selectedPhoto.proxyUrl)}
-                alt={selectedPhoto.alt}
-                className="max-h-[78vh] w-full rounded-xl object-contain"
+                alt={selectedPhoto.alt || selectedPhoto.name || 'Guest photograph'}
+                className="mx-auto max-h-[78vh] w-auto max-w-full rounded-2xl border border-ink-100/15 object-contain shadow-lift"
               />
-              <p className="px-3 pb-2 pt-4 text-center text-sm text-white/70">
-                {new Date(selectedPhoto.createdTime).toLocaleDateString()}
-              </p>
+
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+                <span className="font-mono text-[0.65rem] tracking-[0.24em] text-ink-400">
+                  {selectedPhoto.createdTime
+                    ? new Date(selectedPhoto.createdTime).toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })
+                    : 'Guest photograph'}
+                </span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(selectedPhoto)}
+                    disabled={downloadingIds.has(selectedPhoto.id)}
+                    className="btn-quiet"
+                  >
+                    <DownloadIcon className="h-3.5 w-3.5" />
+                    {downloadingIds.has(selectedPhoto.id) ? 'Saving' : 'Save photo'}
+                  </button>
+                  <button type="button" onClick={() => setSelectedPhoto(null)} className="btn-quiet">
+                    Close
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -389,7 +368,7 @@ export const GuestPhotoPage = () => {
       <AnimatePresence>
         {showFeedbackPrompt && (
           <motion.div
-            className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/75 px-4 py-8 backdrop-blur-md"
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-ink-950/85 px-4 py-8 backdrop-blur-md"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -397,68 +376,55 @@ export const GuestPhotoPage = () => {
             role="presentation"
           >
             <motion.section
-              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-sky-200/20 bg-slate-950 p-6 shadow-[0_28px_90px_rgba(0,0,0,0.6)] sm:p-8"
-              initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 24, scale: prefersReducedMotion ? 1 : 0.96 }}
+              className="card relative w-full max-w-md p-6 sm:p-8"
+              initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 22, scale: prefersReducedMotion ? 1 : 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: prefersReducedMotion ? 0 : 12, scale: prefersReducedMotion ? 1 : 0.98 }}
-              transition={{ duration: prefersReducedMotion ? 0.15 : 0.35, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.35, ease: EASE_SWIFT }}
               onClick={(event) => event.stopPropagation()}
               role="dialog"
               aria-modal="true"
               aria-labelledby="guest-feedback-title"
               aria-describedby="guest-feedback-description"
             >
-              <div className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-sky-400/10 blur-3xl" />
               <button
                 type="button"
                 aria-label="Dismiss feedback invitation"
                 onClick={() => setShowFeedbackPrompt(false)}
-                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-xl text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full border border-ink-100/15 text-ink-300 transition-colors duration-300 hover:border-gold-300/40 hover:text-gold-100"
               >
-                &times;
+                <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
               </button>
-              <div className="relative">
-                <span className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-amber-300/25 bg-amber-300/10 text-2xl text-amber-300" aria-hidden="true">
-                  &#9733;
-                </span>
-                <p className="eyebrow mb-2">A little note</p>
-                <h2 id="guest-feedback-title" className="font-serif text-3xl font-semibold text-white">
-                  How was the celebration?
-                </h2>
-                <p id="guest-feedback-description" className="mt-3 text-sm leading-6 text-white/65">
-                  We would love to hear what you thought of the day. Your ratings and a short note help us keep these memories close.
-                </p>
-                <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setShowFeedbackPrompt(false)}
-                    className="min-h-12 rounded-lg border border-white/15 px-5 text-sm font-medium text-white/75 transition-colors hover:bg-white/5 hover:text-white"
-                  >
-                    Maybe later
-                  </button>
-                  <Link
-                    to="/feedback"
-                    onClick={() => setShowFeedbackPrompt(false)}
-                    className="inline-flex min-h-12 items-center justify-center rounded-lg px-5 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5"
-                    style={{ backgroundColor: currentTheme.accentColor }}
-                  >
-                    Share feedback <span className="ml-2" aria-hidden="true">&#8599;</span>
-                  </Link>
-                </div>
+
+              <span className="mb-5 grid h-12 w-12 place-items-center rounded-full border border-gold-300/30 bg-gold-300/[0.07] text-gold-200" aria-hidden="true">
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none">
+                  <path d="m12 3.6 2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6L3.4 9.9l6-.8z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                </svg>
+              </span>
+
+              <p className="eyebrow mb-2">A little note</p>
+              <h2 id="guest-feedback-title" className="text-3xl text-ink-50">
+                How was the celebration?
+              </h2>
+              <p id="guest-feedback-description" className="mt-3 text-sm leading-relaxed text-ink-300">
+                We would love to hear what you thought of the day. Your ratings and a short note help us keep these memories close.
+              </p>
+
+              <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => setShowFeedbackPrompt(false)} className="btn-quiet">
+                  Maybe later
+                </button>
+                <Link to="/feedback" onClick={() => setShowFeedbackPrompt(false)} className="btn btn-primary">
+                  Share feedback
+                </Link>
               </div>
             </motion.section>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <style>{`
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
-    </motion.div>
+    </div>
   );
 };
 

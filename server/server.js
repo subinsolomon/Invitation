@@ -8,6 +8,8 @@ import galleryRoutes from './routes/gallery.js';
 import guestPhotosRoutes from './routes/guestPhotos.js';
 import feedbackRoutes from './routes/feedback.js';
 import dashboardRoutes from './routes/dashboard.js';
+import shareMemoriesRoutes from './routes/shareMemories.js';
+import weddingRoutes from './routes/wedding.js';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -24,6 +26,8 @@ app.use('/api/gallery', galleryRoutes);
 app.use('/api/guest-photos', guestPhotosRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/share-memories', shareMemoriesRoutes);
+app.use('/api/wedding', weddingRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
