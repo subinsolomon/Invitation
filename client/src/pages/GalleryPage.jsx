@@ -30,16 +30,15 @@ export const GalleryPage = () => {
 
         const data = await response.json();
 
-        if (data.success && data.photos && data.photos.length > 0) {
+        if (data.success && Array.isArray(data.photos)) {
           setPhotos(data.photos);
-          console.log(`✅ Loaded ${data.photos.length} photos from Google Drive`);
+          if (data.photos.length) console.log(`✅ Loaded ${data.photos.length} photos from Google Drive`);
         } else {
-          setError('No photos found in your Google Drive folder.');
-          console.warn('No photos found in response:', data);
+          throw new Error('Gallery returned an invalid photo list.');
         }
       } catch (err) {
         console.error('❌ Error fetching photos:', err);
-        setError(`Error loading gallery: ${err.message}`);
+        setError('The gallery could not load right now. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -153,17 +152,30 @@ export const GalleryPage = () => {
         {/* Error State */}
         {error && !loading && (
           <motion.div
-            className="p-6 rounded-lg text-center mb-8"
+            className="glass-surface mb-8 rounded-2xl p-6 text-center"
             style={{
-              backgroundColor: '#ff6b6b33',
-              border: '2px solid #ff6b6b',
+              borderColor: `${currentTheme.accentColor}44`,
             }}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
+            role="alert"
           >
-            <p className="text-red-500 text-lg font-semibold">⚠️ {error}</p>
-            <p className="text-red-400 text-sm mt-2">
-              Make sure your Google Drive folder ID is configured in .env and all photos are shared with "Anyone with the link"
+            <p className="text-sm text-white/75">{error}</p>
+          </motion.div>
+        )}
+
+        {!loading && !error && photos.length === 0 && (
+          <motion.div
+            className="glass-surface rounded-2xl px-6 py-14 text-center"
+            variants={itemVariants}
+            role="status"
+          >
+            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-sky-300/20 bg-sky-300/10 text-2xl text-sky-200" aria-hidden="true">
+              &#10022;
+            </div>
+            <h2 className="font-serif text-2xl text-white">Stay tuned</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/60">
+              Wedding memories will be added to the gallery soon.
             </p>
           </motion.div>
         )}

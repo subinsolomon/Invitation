@@ -112,16 +112,15 @@ export const GuestPhotoPage = () => {
 
         const data = await response.json();
 
-        if (data.success && data.photos && data.photos.length > 0) {
+        if (data.success && Array.isArray(data.photos)) {
           setPhotos(data.photos);
-          console.log(`✅ Loaded ${data.photos.length} guest photos from Google Drive`);
+          if (data.photos.length) console.log(`✅ Loaded ${data.photos.length} guest photos from Google Drive`);
         } else {
-          setError('No photos found in the guest photos folder.');
-          console.warn('No photos found in response:', data);
+          throw new Error('Guest photos returned an invalid photo list.');
         }
       } catch (err) {
         console.error('❌ Error fetching guest photos:', err);
-        setError(`Error loading guest photos: ${err.message}`);
+        setError('Guest photos could not load right now. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -251,13 +250,11 @@ export const GuestPhotoPage = () => {
         {/* Error State */}
         {error && !loading && (
           <motion.div
-            className="bg-red-50 border border-red-200 rounded-lg p-4 xs:p-6 text-center text-sm xs:text-base"
+            className="glass-surface rounded-2xl p-5 text-center text-sm xs:text-base"
             variants={itemVariants}
+            role="alert"
           >
-            <p className="text-red-800 mb-2">⚠️ {error}</p>
-            <p className="text-red-600 text-xs xs:text-sm">
-              Please ensure the guest photos folder ID and Google Drive API key are correctly configured.
-            </p>
+            <p className="text-white/75">{error}</p>
           </motion.div>
         )}
 
@@ -325,15 +322,6 @@ export const GuestPhotoPage = () => {
                   </motion.div>
                 </div>
 
-                {/* Photo Info */}
-                <div className="p-2 xs:p-3 sm:p-4">
-                  <p
-                    className="text-xs xs:text-sm"
-                    style={{ color: currentTheme.textColor, opacity: 0.7 }}
-                  >
-                    {new Date(photo.createdTime).toLocaleDateString()}
-                  </p>
-                </div>
               </motion.div>
             ))}
           </motion.div>
@@ -344,13 +332,13 @@ export const GuestPhotoPage = () => {
           <motion.div className="text-center py-12" variants={itemVariants}>
             <div className="text-5xl xs:text-6xl mb-4">📷</div>
             <p className="text-lg xs:text-xl" style={{ color: currentTheme.textColor }}>
-              No photos available yet.
+              Stay tuned
             </p>
             <p
               className="text-xs xs:text-sm mt-2"
               style={{ color: currentTheme.textColor, opacity: 0.7 }}
             >
-              Check back soon for guest photos!
+              Photos will be added here soon.
             </p>
           </motion.div>
         )}

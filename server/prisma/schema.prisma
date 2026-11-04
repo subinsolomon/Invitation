@@ -41,3 +41,5 @@ model AppSetting {
 
   @@map("app_settings")
 }
+
+// Persisted runtime switches for public application features.

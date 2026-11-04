@@ -320,6 +320,10 @@ See [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for a quick deployment ch
 - **Countdown Timer**: Real-time countdown in days, hours, minutes, seconds
 - **Call-to-Action**: Links to ceremony details and RSVP form
 
+### Ceremony Guide
+- Wedding schedule, venue map and directions, attire, and frequently asked questions
+- Downloadable calendar invitation with the event set to Kerala local time
+
 ### RSVP Page
 - **Form Validation**: Real-time validation feedback
 - **Attendance Options**: Yes/No radio buttons

@@ -1,0 +1,1 @@
+ALTER TABLE "guestbook_entries" RENAME TO "archived_guestbook_entries";
