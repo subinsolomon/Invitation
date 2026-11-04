@@ -4,10 +4,10 @@ import { dashboardService } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 
 const ratingRows = [
-  { key: 'food', label: 'Food', color: '#facc15' },
-  { key: 'venueAmbience', label: 'Venue & ambience', color: '#38bdf8' },
-  { key: 'photography', label: 'Photography', color: '#fb7185' },
-  { key: 'musicEntertainment', label: 'Music & entertainment', color: '#4ade80' },
+  { key: 'food', field: 'foodRating', label: 'Food', color: '#facc15' },
+  { key: 'venueAmbience', field: 'venueAmbienceRating', label: 'Venue & ambience', color: '#38bdf8' },
+  { key: 'photography', field: 'photographyRating', label: 'Photography', color: '#fb7185' },
+  { key: 'musicEntertainment', field: 'musicEntertainmentRating', label: 'Music & entertainment', color: '#4ade80' },
 ];
 
 const formatDate = (value) => new Date(value).toLocaleString(undefined, {
@@ -20,6 +20,24 @@ const RatingStars = ({ value }) => (
     {'★'.repeat(value)}<span className="text-white/20">{'★'.repeat(5 - value)}</span>
   </span>
 );
+
+const csvCell = (value) => {
+  let text = String(value ?? '');
+  if (/^[\s]*[=+\-@]/.test(text)) text = `'${text}`;
+  return `"${text.replace(/"/g, '""')}"`;
+};
+
+const downloadCsv = (filename, headers, rows) => {
+  const content = [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
+  const url = URL.createObjectURL(new Blob([`\uFEFF${content}`], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};
 
 export const DashboardPage = () => {
   const { currentTheme } = useTheme();
@@ -73,6 +91,31 @@ export const DashboardPage = () => {
       setUpdatingFeedbackStatus(false);
     }
   };
+
+  const exportRSVPs = () => downloadCsv(
+    'sajini-subin-rsvps.csv',
+    ['Name', 'Email', 'Phone', 'Attendance', 'Submitted at'],
+    dashboard.rsvps.map((entry) => [
+      entry.name,
+      entry.email,
+      entry.phone,
+      entry.attendance ? 'Attending' : 'Not attending',
+      new Date(entry.createdAt).toISOString(),
+    ]),
+  );
+
+  const exportFeedback = () => downloadCsv(
+    'sajini-subin-feedback.csv',
+    ['Food', 'Venue & ambience', 'Photography', 'Music & entertainment', 'Comment', 'Submitted at'],
+    dashboard.feedback.map((entry) => [
+      entry.foodRating,
+      entry.venueAmbienceRating,
+      entry.photographyRating,
+      entry.musicEntertainmentRating,
+      entry.comment,
+      new Date(entry.createdAt).toISOString(),
+    ]),
+  );
 
   if (!dashboard) {
     return (
@@ -224,6 +267,38 @@ export const DashboardPage = () => {
               );
             })}
           </div>
+          <div className="mt-8">
+            <h3 className="mb-4 text-sm font-medium text-white/75">Rating distribution</h3>
+            <div className="grid gap-5 md:grid-cols-2">
+              {ratingRows.map((row) => {
+                const distribution = [5, 4, 3, 2, 1].map((score) => ({
+                  score,
+                  count: feedback.filter((entry) => entry[row.field] === score).length,
+                }));
+                const maximum = Math.max(1, ...distribution.map(({ count }) => count));
+                return (
+                  <div key={row.key} className="border-b border-white/10 pb-4">
+                    <p className="mb-3 text-sm text-white/75">{row.label}</p>
+                    <div className="flex h-24 items-end gap-2" aria-label={`${row.label} rating distribution`}>
+                      {distribution.map(({ score, count }) => (
+                        <div key={score} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
+                          <span className="text-[0.65rem] tabular-nums text-white/55">{count}</span>
+                          <motion.div
+                            className="w-full max-w-10 rounded-t-sm"
+                            style={{ backgroundColor: row.color, opacity: 0.8 }}
+                            initial={{ height: 0 }}
+                            animate={{ height: `${Math.max(count ? 8 : 2, (count / maximum) * 58)}px` }}
+                            transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
+                          />
+                          <span className="text-[0.65rem] text-white/40">{score}&#9733;</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </section>
 
         <section className="mt-10" aria-labelledby="rsvps-title">
@@ -232,7 +307,12 @@ export const DashboardPage = () => {
               <p className="eyebrow mb-2">Guest list</p>
               <h2 id="rsvps-title" className="font-serif text-2xl font-semibold text-white">All RSVPs</h2>
             </div>
-            <span className="text-xs text-white/50">{rsvps.length} records</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-white/50">{rsvps.length} records</span>
+              <button type="button" onClick={exportRSVPs} className="min-h-10 rounded-lg border border-white/15 px-3 text-xs font-medium text-white/80 hover:bg-white/5">
+                Export CSV
+              </button>
+            </div>
           </div>
           <div className="overflow-x-auto border-y border-white/10">
             <table className="w-full min-w-[720px] text-left text-sm">
@@ -271,7 +351,12 @@ export const DashboardPage = () => {
               <p className="eyebrow mb-2">Guest notes</p>
               <h2 id="feedback-title" className="font-serif text-2xl font-semibold text-white">All feedback</h2>
             </div>
-            <span className="text-xs text-white/50">{feedback.length} records</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-white/50">{feedback.length} records</span>
+              <button type="button" onClick={exportFeedback} className="min-h-10 rounded-lg border border-white/15 px-3 text-xs font-medium text-white/80 hover:bg-white/5">
+                Export CSV
+              </button>
+            </div>
           </div>
           <div className="overflow-x-auto border-y border-white/10">
             <table className="w-full min-w-[900px] text-left text-sm">

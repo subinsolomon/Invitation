@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import Navigation from './components/Navigation';
 import HomePage from './pages/HomePage';
 import RSVPPage from './pages/RSVPPage';
-import CeremonyPage from './pages/CeremonyPage';
 import GalleryPage from './pages/GalleryPage';
 import GuestPhotoPage from './pages/GuestPhotoPage';
 import FeedbackPage from './pages/FeedbackPage';
 import DashboardPage from './pages/DashboardPage';
+import WeddingGuidePage from './pages/WeddingGuidePage';
 import './index.css';
 
 const ROUTE_ORDER = ['/', '/ceremony', '/gallery', '/guest-photos', '/rsvp', '/feedback', '/dashboard'];
@@ -167,10 +167,12 @@ function AppContent() {
               <Route path="/" element={<HomePage isIntroComplete={!showIntro} />} />
               <Route path="/gallery" element={<GalleryPage />} />
               <Route path="/guest-photos" element={<GuestPhotoPage />} />
-              <Route path="/ceremony" element={<CeremonyPage />} />
+              <Route path="/ceremony" element={<WeddingGuidePage />} />
               <Route path="/rsvp" element={<RSVPPage />} />
               <Route path="/feedback" element={<FeedbackPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/guide" element={<Navigate to="/ceremony" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </motion.div>
         </AnimatePresence>
