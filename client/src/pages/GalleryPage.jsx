@@ -1,21 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { useTheme } from '../context/ThemeContext';
+import PageHeader from '../components/PageHeader';
+import Reveal from '../components/motion/Reveal';
+import { EASE_SWIFT } from '../lib/motion';
+import { useWeddingPhase } from '../context/WeddingPhaseContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const getApiUrl = (path) => (path?.startsWith('http') ? path : `${API_URL}${path}`);
+const getImageSrc = (photo) => getApiUrl(photo.proxyUrl || `/api/gallery/image/${photo.id}`);
+const getDriveFallback = (photo) => `https://drive.google.com/uc?export=view&id=${photo.id}`;
+
+const ArrowIcon = ({ direction = 'next' }) => (
+  <svg
+    className="h-4 w-4"
+    viewBox="0 0 16 16"
+    fill="none"
+    aria-hidden="true"
+    style={{ transform: direction === 'prev' ? 'rotate(180deg)' : undefined }}
+  >
+    <path d="M3 8h9m0 0L8.5 4.5M12 8l-3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 export const GalleryPage = () => {
-  const { currentTheme } = useTheme();
+  const { weddingPhase } = useWeddingPhase();
+  const isAfterWedding = weddingPhase === 'after';
   const prefersReducedMotion = useReducedMotion();
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [activeIndex, setActiveIndex] = useState(null);
 
-  // Fetch photos from backend API
+  const selectedPhoto = activeIndex === null ? null : photos[activeIndex];
+
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
@@ -23,21 +42,18 @@ export const GalleryPage = () => {
         setError(null);
 
         const response = await fetch(`${API_URL}/api/gallery`);
-
         if (!response.ok) {
           throw new Error(`Failed to fetch photos: ${response.statusText}`);
         }
 
         const data = await response.json();
-
         if (data.success && Array.isArray(data.photos)) {
           setPhotos(data.photos);
-          if (data.photos.length) console.log(`✅ Loaded ${data.photos.length} photos from Google Drive`);
         } else {
           throw new Error('Gallery returned an invalid photo list.');
         }
       } catch (err) {
-        console.error('❌ Error fetching photos:', err);
+        console.error('Error fetching gallery photos:', err);
         setError('The gallery could not load right now. Please try again later.');
       } finally {
         setLoading(false);
@@ -47,293 +63,209 @@ export const GalleryPage = () => {
     fetchPhotos();
   }, []);
 
+  const closeLightbox = useCallback(() => setActiveIndex(null), []);
+
+  const step = useCallback(
+    (direction) => {
+      setActiveIndex((current) => {
+        if (current === null || photos.length === 0) return current;
+        return (current + direction + photos.length) % photos.length;
+      });
+    },
+    [photos.length],
+  );
+
   useEffect(() => {
+    if (activeIndex === null) return undefined;
+
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        setSelectedPhoto(null);
-      }
+      if (event.key === 'Escape') closeLightbox();
+      if (event.key === 'ArrowRight') step(1);
+      if (event.key === 'ArrowLeft') step(-1);
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: prefersReducedMotion ? 0 : 0.1,
-        delayChildren: prefersReducedMotion ? 0 : 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: prefersReducedMotion ? 0.15 : 0.6 },
-    },
-  };
-
-  const photoVariants = {
-    hidden: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.94 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: { duration: prefersReducedMotion ? 0.18 : 0.5 },
-    },
-    hover: prefersReducedMotion ? {} : {
-      scale: 1.05,
-      transition: { duration: 0.3 },
-    },
-  };
-
-  const modalVariants = {
-    hidden: { opacity: 0, scale: prefersReducedMotion ? 1 : 0.96 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: { duration: prefersReducedMotion ? 0.15 : 0.3 },
-    },
-    exit: {
-      opacity: 0,
-      scale: 0.8,
-      transition: { duration: prefersReducedMotion ? 0.15 : 0.3 },
-    },
-  };
+  }, [activeIndex, closeLightbox, step]);
 
   return (
-    <motion.div
-      className="min-h-screen px-4 pt-8 pb-8 sm:px-6 sm:pt-12 sm:pb-12"
-      style={{ backgroundColor: currentTheme.bgColor }}
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      <div className="mx-auto max-w-7xl">
-        {/* Header */}
-        <motion.div variants={itemVariants} className="mb-12 max-w-2xl">
-          <p className="eyebrow mb-4">Moments in time</p>
-          <h1
-            className="mb-4 text-4xl font-serif font-bold sm:text-6xl"
-            style={{ color: currentTheme.accentColor }}
-          >
-            Our Gallery
-          </h1>
-          
-        </motion.div>
+    <div className="shell pb-24">
+      <PageHeader
+        eyebrow={isAfterWedding ? 'From the day we shared' : 'Sajini, Subin & family'}
+        title="Our"
+        accent="Moments"
+        lede={
+          photos.length > 0
+            ? isAfterWedding
+              ? `${photos.length} photographs of Sajini, Subin, and close family from the wedding day.`
+              : `${photos.length} photographs of Sajini, Subin, and close family.`
+            : isAfterWedding
+              ? 'Photographs of the couple and close family will appear here. Stay tuned.'
+              : 'We are getting our family photographs ready. Stay tuned.'
+        }
+      />
 
-        {/* Loading State */}
-        {loading && (
-          <motion.div
-            className="flex flex-col items-center justify-center py-20"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <motion.div
-              className="w-16 h-16 border-4 rounded-full"
-              style={{
-                borderColor: currentTheme.accentColor,
-                borderTopColor: 'transparent',
-              }}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+      {loading && (
+        <div className="mt-12 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="aspect-[4/5] animate-pulse rounded-2xl border border-ink-100/10 bg-ink-100/[0.04]"
+              style={{ animationDelay: `${index * 90}ms` }}
+              aria-hidden="true"
             />
-            <p className="mt-4 text-lg" style={{ color: currentTheme.textColor }}>
-              Loading photos from Google Drive...
-            </p>
-          </motion.div>
-        )}
+          ))}
+          <span className="sr-only" role="status">
+            Loading photographs
+          </span>
+        </div>
+      )}
 
-        {/* Error State */}
-        {error && !loading && (
-          <motion.div
-            className="glass-surface mb-8 rounded-2xl p-6 text-center"
-            style={{
-              borderColor: `${currentTheme.accentColor}44`,
-            }}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            role="alert"
-          >
-            <p className="text-sm text-white/75">{error}</p>
-          </motion.div>
-        )}
-
-        {!loading && !error && photos.length === 0 && (
-          <motion.div
-            className="glass-surface rounded-2xl px-6 py-14 text-center"
-            variants={itemVariants}
-            role="status"
-          >
-            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-sky-300/20 bg-sky-300/10 text-2xl text-sky-200" aria-hidden="true">
-              &#10022;
-            </div>
-            <h2 className="font-serif text-2xl text-white">Stay tuned</h2>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/60">
-              Wedding memories will be added to the gallery soon.
-            </p>
-          </motion.div>
-        )}
-
-        {/* Photo Grid */}
-        {!loading && photos.length > 0 && (
-          <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-            variants={containerVariants}
-          >
-            {photos.map((photo, index) => (
-              <motion.div
-                key={photo.id}
-                variants={photoVariants}
-                whileHover={prefersReducedMotion ? undefined : 'hover'}
-                className="relative group cursor-pointer overflow-hidden rounded-lg"
-                onClick={() => setSelectedPhoto(photo)}
-                style={{
-                  aspectRatio: '1/1',
-                  boxShadow: `0 8px 32px ${currentTheme.accentColor}33`,
-                }}
-              >
-                {/* Image Container */}
-                <motion.div
-                  className="relative h-full w-full"
-                >
-                  <motion.img
-                    layoutId={`gallery-photo-${photo.id}`}
-                    src={getApiUrl(photo.proxyUrl || `/api/gallery/image/${photo.id}`)}
-                    alt={photo.alt}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Fallback to direct Google Drive URL if proxy fails
-                      e.target.src = `https://drive.google.com/uc?export=view&id=${photo.id}`;
-                    }}
-                  />
-
-                  {/* Overlay */}
-                  <motion.div
-                    className="pointer-events-none absolute inset-0 hidden items-center justify-center md:flex"
-                    style={{
-                      backgroundColor: `${currentTheme.primaryColor}cc`,
-                    }}
-                    initial={{ opacity: 0 }}
-                    whileHover={prefersReducedMotion ? undefined : { opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <motion.div
-                      className="text-center"
-                      initial={{ scale: 0.8 }}
-                      whileHover={{ scale: 1 }}
-                    >
-                      {/* <p className="text-white text-lg font-semibold mb-2">{photo.title}</p> */}
-                      <p className="text-white text-sm">Click to view</p>
-                    </motion.div>
-                  </motion.div>
-                </motion.div>
-
-                {/* Number Badge */}
-                <div
-                  className="absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
-                  style={{
-                    backgroundColor: currentTheme.accentColor,
-                    color: currentTheme.primaryColor,
-                  }}
-                >
-                  {index + 1}
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-
-      
-      </div>
-
-      {/* Lightbox Modal */}
-      {createPortal(
-        <AnimatePresence>
-      {selectedPhoto && (
+      {error && !loading && (
         <motion.div
-          className="fixed inset-0 z-[100] flex min-h-[100dvh] items-center justify-center p-3 sm:p-6"
-          style={{
-            backgroundColor: `${currentTheme.primaryColor}ee`,
-            backdropFilter: 'blur(18px)',
-          }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setSelectedPhoto(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-label={`${selectedPhoto.title || selectedPhoto.alt || 'Gallery'} photo viewer`}
+          className="mt-10 rounded-2xl border border-clay-400/35 bg-clay-500/10 px-5 py-4 text-sm text-clay-200"
+          role="alert"
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
         >
-          <motion.div
-            className="relative w-full max-w-4xl overflow-hidden rounded-2xl p-2 sm:p-3"
-            variants={modalVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            onClick={(event) => event.stopPropagation()}
-            style={{
-              backgroundColor: currentTheme.bgColor,
-              border: `1px solid ${currentTheme.accentColor}99`,
-              boxShadow: `0 24px 80px ${currentTheme.primaryColor}cc, 0 0 0 1px ${currentTheme.accentColor}33`,
-            }}
-          >
-            {/* Close Button */}
-            <motion.button
-              type="button"
-              aria-label="Close photo viewer"
-              className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full text-2xl font-light shadow-lg"
-              style={{
-                backgroundColor: `${currentTheme.primaryColor}cc`,
-                color: currentTheme.textColor,
-                border: `1px solid ${currentTheme.accentColor}99`,
-              }}
-              whileHover={{ scale: 1.08, backgroundColor: currentTheme.accentColor, color: currentTheme.primaryColor }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setSelectedPhoto(null)}
-            >
-              ✕
-            </motion.button>
-
-            {/* Image */}
-            <motion.img
-              layoutId={`gallery-photo-${selectedPhoto.id}`}
-              src={getApiUrl(selectedPhoto.proxyUrl || `/api/gallery/image/${selectedPhoto.id}`)}
-              alt={selectedPhoto.alt}
-              className="max-h-[72vh] w-full rounded-xl object-contain"
-              style={{ backgroundColor: `${currentTheme.primaryColor}55` }}
-              onError={(e) => {
-                // Fallback to direct Google Drive URL
-                e.target.src = `https://drive.google.com/uc?export=view&id=${selectedPhoto.id}`;
-              }}
-            />
-
-            {/* Caption */}
-            <motion.div
-              className="px-3 pb-2 pt-4 text-center sm:px-5 sm:pb-3"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              {/* <p className="text-lg font-semibold" style={{ color: currentTheme.accentColor }}>
-                {selectedPhoto.title}
-              </p> */}
-              {/* <p className="mt-1 text-sm" style={{ color: currentTheme.textColor }}>
-                {selectedPhoto.alt}
-              </p> */}
-            </motion.div>
-          </motion.div>
+          {error}
         </motion.div>
       )}
+
+      {!loading && !error && photos.length === 0 && (
+        <Reveal variant="fade">
+          <div className="card mt-12 px-6 py-16 text-center">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-gold-300/30 bg-gold-300/[0.06] text-gold-200">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="2.5" stroke="currentColor" strokeWidth="1.4" />
+                <circle cx="8.5" cy="10" r="1.6" stroke="currentColor" strokeWidth="1.4" />
+                <path d="m4 17 5-4.5 4 3.5 3-2.5 4 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <h2 className="mt-6 text-2xl text-ink-50">Stay tuned</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink-400">
+              Wedding memories will be added to the gallery soon.
+            </p>
+          </div>
+        </Reveal>
+      )}
+
+      {!loading && photos.length > 0 && (
+        <div className="mt-12 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+          {photos.map((photo, index) => (
+            <motion.button
+              key={photo.id}
+              type="button"
+              onClick={() => setActiveIndex(index)}
+              className="group relative aspect-[4/5] overflow-hidden rounded-2xl border border-ink-100/10 bg-ink-900 text-left focus-visible:outline-none"
+              initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{
+                duration: prefersReducedMotion ? 0 : 0.6,
+                delay: prefersReducedMotion ? 0 : Math.min(index * 0.04, 0.4),
+                ease: EASE_SWIFT,
+              }}
+              whileHover={prefersReducedMotion ? undefined : { y: -3 }}
+              aria-label={`Open photograph ${index + 1} of ${photos.length}`}
+            >
+              <motion.img
+                src={getImageSrc(photo)}
+                alt={photo.alt || `Wedding photograph ${index + 1}`}
+                loading="lazy"
+                className="h-full w-full object-cover transition-transform duration-[900ms] ease-swift group-hover:scale-[1.06]"
+                onError={(event) => {
+                  event.currentTarget.src = getDriveFallback(photo);
+                }}
+              />
+
+              <span
+                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-950/85 via-ink-950/10 to-transparent opacity-70 transition-opacity duration-500 group-hover:opacity-95"
+                aria-hidden="true"
+              />
+
+              <span
+                className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-transparent transition-colors duration-500 group-hover:ring-gold-300/45"
+                aria-hidden="true"
+              />
+
+              <span className="pointer-events-none absolute inset-x-4 bottom-4 flex items-end justify-between gap-3">
+                <span className="font-mono text-[0.6rem] tracking-[0.28em] text-ink-200/80">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <span className="translate-y-1 text-[0.62rem] font-semibold uppercase tracking-label text-gold-200 opacity-0 transition-all duration-500 ease-swift group-hover:translate-y-0 group-hover:opacity-100">
+                  View
+                </span>
+              </span>
+            </motion.button>
+          ))}
+        </div>
+      )}
+
+      {createPortal(
+        <AnimatePresence>
+          {selectedPhoto && (
+            <motion.div
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-ink-950/94 p-3 backdrop-blur-xl sm:p-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
+              onClick={closeLightbox}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Photograph viewer"
+            >
+              <motion.div
+                className="relative w-full max-w-4xl"
+                initial={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.98 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.35, ease: EASE_SWIFT }}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <img
+                  src={getImageSrc(selectedPhoto)}
+                  alt={selectedPhoto.alt || 'Wedding photograph'}
+                  className="mx-auto max-h-[78vh] w-auto max-w-full rounded-2xl border border-ink-100/15 object-contain shadow-lift"
+                  onError={(event) => {
+                    event.currentTarget.src = getDriveFallback(selectedPhoto);
+                  }}
+                />
+
+                <div className="mt-4 flex items-center justify-between gap-4">
+                  <button type="button" onClick={() => step(-1)} className="btn-quiet" aria-label="Previous photograph">
+                    <ArrowIcon direction="prev" />
+                    Prev
+                  </button>
+
+                  <span className="font-mono text-[0.65rem] tracking-[0.28em] text-ink-400">
+                    {String(activeIndex + 1).padStart(2, '0')} / {String(photos.length).padStart(2, '0')}
+                  </span>
+
+                  <button type="button" onClick={() => step(1)} className="btn-quiet" aria-label="Next photograph">
+                    Next
+                    <ArrowIcon direction="next" />
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  aria-label="Close photograph viewer"
+                  onClick={closeLightbox}
+                  className="absolute -top-2 right-0 grid h-10 w-10 -translate-y-full place-items-center rounded-full border border-ink-100/20 bg-ink-950/80 text-ink-200 transition-colors duration-300 hover:border-gold-300/50 hover:text-gold-100 sm:-right-2"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
         </AnimatePresence>,
         document.body,
       )}
-    </motion.div>
+    </div>
   );
 };
 

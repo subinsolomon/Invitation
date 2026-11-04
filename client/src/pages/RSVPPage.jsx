@@ -1,54 +1,93 @@
-import React, { useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext';
+import PageHeader from '../components/PageHeader';
+import Reveal from '../components/motion/Reveal';
 import { rsvpService } from '../services/api';
+import { EASE_SWIFT } from '../lib/motion';
+import { useWeddingPhase } from '../context/WeddingPhaseContext';
+
+const ATTENDANCE_OPTIONS = [
+  {
+    value: 'yes',
+    title: 'I will be there',
+    hint: 'Joining the celebration',
+  },
+  {
+    value: 'no',
+    title: 'I cannot make it',
+    hint: 'Sending love from afar',
+  },
+];
+
+const INITIAL_FORM = { name: '', email: '', phone: '', attendance: '' };
+
+const SuccessBanner = ({ afterWedding }) => (
+  <motion.div
+    className="mt-8 flex items-start gap-3 rounded-2xl border border-gold-300/30 bg-gold-300/[0.08] px-5 py-4"
+    role="status"
+    initial={{ opacity: 0, y: -8 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -8 }}
+    transition={{ duration: 0.4, ease: EASE_SWIFT }}
+  >
+    <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-gold-300 text-ink-950">
+      <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <path d="m2.5 6.5 2.2 2.2 4.8-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+    <div>
+      <p className="text-sm font-semibold text-gold-100">Your RSVP has been received</p>
+      <p className="mt-1 text-sm text-ink-300">
+        {afterWedding ? 'Thank you for sharing the day with us.' : 'Thank you — we cannot wait to celebrate with you.'}
+      </p>
+    </div>
+  </motion.div>
+);
 
 export const RSVPPage = () => {
-  const { currentTheme } = useTheme();
+  const { weddingPhase } = useWeddingPhase();
+  const isAfterWedding = weddingPhase === 'after';
   const prefersReducedMotion = useReducedMotion();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    attendance: '',
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [rsvpEnabled, setRsvpEnabled] = useState(null);
+  const [rsvpStatusUnavailable, setRsvpStatusUnavailable] = useState(false);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: prefersReducedMotion ? 0 : 0.1,
-      },
-    },
-  };
+  useEffect(() => {
+    let active = true;
+    const checkRSVPStatus = async () => {
+      try {
+        const status = await rsvpService.getStatus();
+        if (active) {
+          setRsvpEnabled(status.enabled);
+          setRsvpStatusUnavailable(false);
+        }
+      } catch {
+        if (active) {
+          setRsvpEnabled(null);
+          setRsvpStatusUnavailable(true);
+        }
+      }
+    };
 
-  const itemVariants = {
-    hidden: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: prefersReducedMotion ? 0.15 : 0.6 },
-    },
-  };
+    checkRSVPStatus();
+    const intervalId = window.setInterval(checkRSVPStatus, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error for this field when user starts typing
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((previous) => ({ ...previous, [name]: value }));
+
     if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
+      setErrors((previous) => ({ ...previous, [name]: '' }));
     }
 
     if (name === 'attendance') {
@@ -58,36 +97,36 @@ export const RSVPPage = () => {
   };
 
   const validateForm = () => {
-    const newErrors = {};
+    const nextErrors = {};
 
     if (formData.attendance === 'yes') {
       if (!formData.name.trim()) {
-        newErrors.name = 'Name is required';
+        nextErrors.name = 'Name is required';
       } else if (formData.name.trim().length < 2) {
-        newErrors.name = 'Name must be at least 2 characters';
+        nextErrors.name = 'Name must be at least 2 characters';
       }
 
       if (!formData.email.trim()) {
-        newErrors.email = 'Email is required';
+        nextErrors.email = 'Email is required';
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = 'Please enter a valid email address';
+        nextErrors.email = 'Please enter a valid email address';
       }
 
-      if (formData.phone && !/^[\d\s\-\+\(\)]+$/.test(formData.phone)) {
-        newErrors.phone = 'Please enter a valid phone number';
+      if (formData.phone && !/^[\d\s\-+()]+$/.test(formData.phone)) {
+        nextErrors.phone = 'Please enter a valid phone number';
       }
     }
 
-    return newErrors;
+    return nextErrors;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setErrorMessage('');
 
-    const newErrors = validateForm();
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    const nextErrors = validateForm();
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
       return;
     }
 
@@ -102,27 +141,15 @@ export const RSVPPage = () => {
       });
 
       setSuccess(true);
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        attendance: '',
-      });
+      setFormData(INITIAL_FORM);
       setErrors({});
-
-      // Hide success message after 5 seconds
-      setTimeout(() => {
-        setSuccess(false);
-      }, 5000);
+      window.setTimeout(() => setSuccess(false), 6000);
     } catch (error) {
+      if (error.status === 403) setRsvpEnabled(false);
       if (error.message) {
         setErrorMessage(error.message);
       } else if (error.errors) {
-        const newErrs = {};
-        error.errors.forEach((err) => {
-          newErrs[err.path] = err.msg;
-        });
-        setErrors(newErrs);
+        setErrors(Object.fromEntries(error.errors.map((item) => [item.path, item.msg])));
       } else {
         setErrorMessage('Failed to submit RSVP. Please try again.');
       }
@@ -131,253 +158,243 @@ export const RSVPPage = () => {
     }
   };
 
-  return (
-    <motion.div
-      className="min-h-screen px-4 pt-8 pb-8 sm:px-6 sm:pt-12 sm:pb-12"
-      style={{ backgroundColor: currentTheme.bgColor }}
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      <div className="mx-auto max-w-2xl">
-        <motion.div variants={itemVariants} className="mb-10 max-w-xl">
-          <p className="eyebrow mb-4">Your seat at the table</p>
-          <h1 className="mb-4 text-4xl font-serif font-bold sm:text-6xl" style={{ color: currentTheme.accentColor }}>
-            RSVP
-          </h1>
-          <p className="text-sm xs:text-base sm:text-lg" style={{ color: currentTheme.textColor }}>
-            Please let us know if you can join us on our special day
-          </p>
-        </motion.div>
+  const isAttending = formData.attendance === 'yes';
 
-        {success && (
-          <motion.div
-            variants={itemVariants}
-            className="mb-4 xs:mb-6 p-3 xs:p-4 rounded-lg text-center text-sm xs:text-base"
-            style={{
-              backgroundColor: '#d4edda',
-              color: '#155724',
-              border: '1px solid #c3e6cb',
-            }}
-            exit={{ opacity: 0 }}
-          >
-            ✨ Thank you! Your RSVP has been received. We look forward to seeing you! ✨
-          </motion.div>
-        )}
+  return (
+    <div className="shell pb-24">
+      <PageHeader
+        eyebrow={isAfterWedding ? 'After the celebration' : 'Your seat at the table'}
+        title="RSVP"
+        lede={isAfterWedding
+          ? 'Thank you to everyone who celebrated with us. You can still update your response below.'
+          : 'Let us know whether you can join us. If you are coming, a name and an email are all we need — phone is optional.'}
+      />
+
+      {rsvpEnabled === true ? (
+      <div className="mx-auto mt-12 max-w-2xl">
+        <AnimatePresence>{success && <SuccessBanner afterWedding={isAfterWedding} />}</AnimatePresence>
 
         {errorMessage && (
           <motion.div
-            variants={itemVariants}
-            className="mb-4 xs:mb-6 p-3 xs:p-4 rounded-lg text-center text-sm xs:text-base"
-            style={{
-              backgroundColor: '#f8d7da',
-              color: '#721c24',
-              border: '1px solid #f5c6cb',
-            }}
+            className="mt-8 rounded-2xl border border-clay-400/35 bg-clay-500/10 px-5 py-4 text-sm text-clay-200"
+            role="alert"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
           >
             {errorMessage}
           </motion.div>
         )}
 
-        <motion.form
-          onSubmit={handleSubmit}
-          className="glass-surface space-y-5 rounded-3xl p-5 sm:space-y-6 sm:p-8"
-          style={{
-            borderColor: `${currentTheme.accentColor}44`,
-          }}
-          variants={containerVariants}
-        >
-          {/* Attendance Selection */}
-          <motion.div variants={itemVariants}>
-            <label className="block text-xs xs:text-sm font-semibold mb-3 xs:mb-4" style={{ color: currentTheme.textColor }}>
-              Will you be attending? *
-            </label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <motion.label
-                htmlFor="yes"
-                className="relative flex min-h-20 cursor-pointer items-center gap-3 overflow-hidden rounded-xl border p-4 transition-colors"
-                style={{
-                  borderColor: formData.attendance === 'yes' ? currentTheme.accentColor : `${currentTheme.accentColor}44`,
-                  color: currentTheme.textColor,
-                }}
-                whileHover={prefersReducedMotion ? undefined : { y: -2 }}
-                whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
-              >
-                {formData.attendance === 'yes' && (
-                  <motion.span
-                    layoutId="attendanceSelectionGlow"
-                    className="absolute inset-0 -z-0 rounded-xl bg-sky-300/10 shadow-[inset_0_0_28px_rgba(56,189,248,0.12)]"
-                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                  />
-                )}
-                <input
-                  type="radio"
-                  id="yes"
-                  name="attendance"
-                  value="yes"
-                  checked={formData.attendance === 'yes'}
-                  onChange={handleChange}
-                  className="relative z-10 h-5 w-5 shrink-0"
-                  style={{ accentColor: currentTheme.accentColor }}
-                />
-                <span className="relative z-10 text-sm xs:text-base">
-                  Yes, I will attend! 🎉
-                </span>
-              </motion.label>
-              <motion.label
-                htmlFor="no"
-                className="relative flex min-h-20 cursor-pointer items-center gap-3 overflow-hidden rounded-xl border p-4 transition-colors"
-                style={{
-                  borderColor: formData.attendance === 'no' ? currentTheme.accentColor : `${currentTheme.accentColor}44`,
-                  color: currentTheme.textColor,
-                }}
-                whileHover={prefersReducedMotion ? undefined : { y: -2 }}
-                whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
-              >
-                {formData.attendance === 'no' && (
-                  <motion.span
-                    layoutId="attendanceSelectionGlow"
-                    className="absolute inset-0 -z-0 rounded-xl bg-sky-300/10 shadow-[inset_0_0_28px_rgba(56,189,248,0.12)]"
-                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                  />
-                )}
-                <input
-                  type="radio"
-                  id="no"
-                  name="attendance"
-                  value="no"
-                  checked={formData.attendance === 'no'}
-                  onChange={handleChange}
-                  className="relative z-10 h-5 w-5 shrink-0"
-                  style={{ accentColor: currentTheme.accentColor }}
-                />
-                <span className="relative z-10 text-sm xs:text-base">
-                  Sorry, I cannot attend 😢
-                </span>
-              </motion.label>
-            </div>
-          </motion.div>
+        <Reveal variant="fade" delay={0.1}>
+          <form onSubmit={handleSubmit} className="card mt-8 p-6 sm:p-9" noValidate>
+            <fieldset>
+              <legend className="label">Will you be attending?</legend>
 
-          {formData.attendance === 'yes' ? (
-            <>
-          {/* Name Field */}
-          <motion.div variants={itemVariants}>
-            <label className="block text-xs xs:text-sm font-semibold mb-2" style={{ color: currentTheme.textColor }}>
-              Name *
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full px-3 xs:px-4 py-2 xs:py-3 rounded-lg border text-sm xs:text-base"
-              style={{
-                borderColor: errors.name ? '#dc3545' : currentTheme.accentColor,
-                backgroundColor: currentTheme.primaryColor,
-                color: currentTheme.textColor,
-              }}
-              placeholder="Enter your full name"
-            />
-            {errors.name && <p className="text-red-500 text-xs xs:text-sm mt-1">{errors.name}</p>}
-          </motion.div>
+              <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                {ATTENDANCE_OPTIONS.map((option) => {
+                  const selected = formData.attendance === option.value;
+                  return (
+                    <label
+                      key={option.value}
+                      htmlFor={option.value}
+                      className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border p-5 transition-colors duration-300 ease-swift ${
+                        selected
+                          ? 'border-gold-300/60 bg-gold-300/[0.07]'
+                          : 'border-ink-100/12 hover:border-ink-100/25 hover:bg-ink-100/[0.03]'
+                      }`}
+                    >
+                      {selected && (
+                        <motion.span
+                          layoutId="rsvp-selection"
+                          className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-gold-300/40"
+                          transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                        />
+                      )}
 
-          {/* Email Field */}
-          <motion.div variants={itemVariants}>
-            <label className="block text-xs xs:text-sm font-semibold mb-2" style={{ color: currentTheme.textColor }}>
-              Email *
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-3 xs:px-4 py-2 xs:py-3 rounded-lg border text-sm xs:text-base"
-              style={{
-                borderColor: errors.email ? '#dc3545' : currentTheme.accentColor,
-                backgroundColor: currentTheme.primaryColor,
-                color: currentTheme.textColor,
-              }}
-              placeholder="your@email.com"
-            />
-            {errors.email && <p className="text-red-500 text-xs xs:text-sm mt-1">{errors.email}</p>}
-          </motion.div>
+                      <span className="flex items-center justify-between gap-3">
+                        <span className="flex items-center gap-3">
+                          <input
+                            type="radio"
+                            id={option.value}
+                            name="attendance"
+                            value={option.value}
+                            checked={selected}
+                            onChange={handleChange}
+                            className="h-4 w-4 shrink-0 accent-gold-300"
+                          />
+                          <span className="text-[0.95rem] font-medium text-ink-100">{option.title}</span>
+                        </span>
+                        <motion.span
+                          className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-gold-300/50 text-gold-200"
+                          animate={{ opacity: selected ? 1 : 0, scale: selected ? 1 : 0.6 }}
+                          transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: EASE_SWIFT }}
+                          aria-hidden="true"
+                        >
+                          <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
+                            <path d="m2.5 6.5 2.2 2.2 4.8-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </motion.span>
+                      </span>
+                      <span className="mt-2 pl-7 text-xs uppercase tracking-[0.16em] text-ink-500">
+                        {option.hint}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
 
-          {/* Phone Field */}
-          <motion.div variants={itemVariants}>
-            <label className="block text-xs xs:text-sm font-semibold mb-2" style={{ color: currentTheme.textColor }}>
-              Phone (Optional)
-            </label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="w-full px-3 xs:px-4 py-2 xs:py-3 rounded-lg border text-sm xs:text-base"
-              style={{
-                borderColor: errors.phone ? '#dc3545' : currentTheme.accentColor,
-                backgroundColor: currentTheme.primaryColor,
-                color: currentTheme.textColor,
-              }}
-              placeholder="+1 (555) 123-4567"
-            />
-            {errors.phone && <p className="text-red-500 text-xs xs:text-sm mt-1">{errors.phone}</p>}
-          </motion.div>
+            <AnimatePresence initial={false} mode="wait">
+              {isAttending && (
+                <motion.div
+                  key="attending-fields"
+                  className="mt-8 space-y-5"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.45, ease: EASE_SWIFT }}
+                >
+                  <div>
+                    <label htmlFor="name" className="label">
+                      Full name
+                    </label>
+                    <input
+                      id="name"
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="field"
+                      placeholder="Enter your full name"
+                      autoComplete="name"
+                      aria-invalid={Boolean(errors.name)}
+                      aria-describedby={errors.name ? 'name-error' : undefined}
+                    />
+                    {errors.name && (
+                      <p id="name-error" className="field-error">
+                        {errors.name}
+                      </p>
+                    )}
+                  </div>
 
-            </>
-          ) : formData.attendance === 'no' ? (
-            <motion.p
-              variants={itemVariants}
-              className="rounded-lg p-4 text-center text-sm xs:text-base"
-              style={{
-                backgroundColor: `${currentTheme.accentColor}22`,
-                color: currentTheme.textColor,
-              }}
-            >
-              No worries! We will eat an extra slice of cake in your honor. 🍰
-            </motion.p>
-          ) : null}
+                  <div>
+                    <label htmlFor="email" className="label">
+                      Email
+                    </label>
+                    <input
+                      id="email"
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="field"
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      aria-invalid={Boolean(errors.email)}
+                      aria-describedby={errors.email ? 'email-error' : undefined}
+                    />
+                    {errors.email && (
+                      <p id="email-error" className="field-error">
+                        {errors.email}
+                      </p>
+                    )}
+                  </div>
 
-          {/* Submit Button */}
-          {formData.attendance === 'yes' && (
-            <motion.button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 xs:py-4 rounded-lg font-semibold text-base xs:text-lg transition-all"
-              style={{
-                backgroundColor: currentTheme.accentColor,
-                color: currentTheme.primaryColor,
-                opacity: loading ? 0.6 : 1,
-                cursor: loading ? 'not-allowed' : 'pointer',
-              }}
-              whileHover={prefersReducedMotion ? undefined : { scale: loading ? 1 : 1.02 }}
-              whileTap={prefersReducedMotion ? undefined : { scale: loading ? 1 : 0.98 }}
-              variants={itemVariants}
-            >
-              {loading ? 'Submitting...' : 'Submit RSVP'}
-            </motion.button>
-          )}
+                  <div>
+                    <label htmlFor="phone" className="label">
+                      Phone <span className="normal-case tracking-normal text-ink-500">(optional)</span>
+                    </label>
+                    <input
+                      id="phone"
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="field"
+                      placeholder="+91 98765 43210"
+                      autoComplete="tel"
+                      aria-invalid={Boolean(errors.phone)}
+                      aria-describedby={errors.phone ? 'phone-error' : undefined}
+                    />
+                    {errors.phone && (
+                      <p id="phone-error" className="field-error">
+                        {errors.phone}
+                      </p>
+                    )}
+                  </div>
 
-          {formData.attendance === 'yes' && (
-            <p className="text-sm text-center" style={{ color: currentTheme.textColor }}>
-              * Required fields
-            </p>
-          )}
-        </motion.form>
+                  <button type="submit" className="btn btn-primary w-full" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <span className="h-3.5 w-3.5 animate-spin rounded-full border border-ink-950/40 border-t-ink-950" aria-hidden="true" />
+                        Sending your RSVP
+                      </>
+                    ) : (
+                      'Send my RSVP'
+                    )}
+                  </button>
 
-        <motion.div variants={itemVariants} className="mt-6 text-center">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 rounded-lg border px-5 py-3 text-sm font-semibold transition-all"
-            style={{
-              borderColor: currentTheme.accentColor,
-              color: currentTheme.accentColor,
-            }}
-          >
-            ← Back to Home
-          </Link>
-        </motion.div>
+                  <p className="text-center text-xs text-ink-500">Fields above are required.</p>
+                </motion.div>
+              )}
+
+              {formData.attendance === 'no' && (
+                <motion.div
+                  key="declined"
+                  className="mt-8 rounded-2xl border border-ink-100/12 bg-ink-100/[0.03] px-5 py-6 text-center"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: EASE_SWIFT }}
+                >
+                  <p className="font-serif text-xl text-ink-100">We will miss you.</p>
+                  <p className="mx-auto mt-2 max-w-sm text-sm text-ink-400">
+                    {isAfterWedding
+                      ? 'Thank you for letting us know. Browse Our Moments and Event Memories to revisit the day.'
+                      : 'Thank you for letting us know. We will share the photographs here after the celebration.'}
+                  </p>
+                  <Link to="/gallery" className="btn-quiet mt-5">
+                    Visit the gallery
+                  </Link>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </form>
+        </Reveal>
+
+        <Reveal variant="fade" delay={0.16}>
+          <div className="mt-8 flex items-center justify-center">
+            <Link to="/" className="btn-quiet">
+              <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M12 8H4m0 0 3.5-3.5M4 8l3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Back to home
+            </Link>
+          </div>
+        </Reveal>
       </div>
-    </motion.div>
+      ) : (
+        <Reveal variant="fade" delay={0.1}>
+          <section className="card mx-auto mt-12 max-w-2xl px-6 py-10 text-center" role="status" aria-live="polite">
+            <p className="eyebrow mb-3">RSVP</p>
+            <h2 className="font-serif text-2xl text-ink-50">
+              {rsvpStatusUnavailable
+                ? 'RSVPs are temporarily unavailable'
+                : rsvpEnabled === false
+                  ? 'RSVPs are currently closed'
+                  : 'Checking RSVP availability'}
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-ink-400">
+              {rsvpStatusUnavailable
+                ? 'Please try again in a moment.'
+                : rsvpEnabled === false
+                  ? 'We are not accepting new responses right now. Please check back later.'
+                  : 'The RSVP form will appear when responses are open.'}
+            </p>
+          </section>
+        </Reveal>
+      )}
+    </div>
   );
 };
 

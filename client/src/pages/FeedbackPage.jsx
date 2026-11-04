@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { feedbackService } from '../services/api';
+import { useWeddingPhase } from '../context/WeddingPhaseContext';
 
 const ratingCategories = [
   { key: 'foodRating', label: 'Food', description: 'The meal and refreshments' },
@@ -19,6 +20,8 @@ const emptyRatings = {
 
 export const FeedbackPage = () => {
   const { currentTheme } = useTheme();
+  const { weddingPhase } = useWeddingPhase();
+  const isAfterWedding = weddingPhase === 'after';
   const [ratings, setRatings] = useState(emptyRatings);
   const [hoveredRating, setHoveredRating] = useState({});
   const [comment, setComment] = useState('');
@@ -88,12 +91,14 @@ export const FeedbackPage = () => {
     >
       <div className="mx-auto max-w-3xl">
         <header className="mb-8">
-          <p className="eyebrow mb-3">A note from you</p>
+          <p className="eyebrow mb-3">{isAfterWedding ? 'After the celebration' : 'A note from you'}</p>
           <h1 className="font-serif text-4xl font-semibold sm:text-5xl" style={{ color: currentTheme.accentColor }}>
-            Share your feedback
+            {isAfterWedding ? 'Share your thoughts' : 'Share your feedback'}
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-white/70 sm:text-base">
-            Your thoughts mean a lot to us. Rate each part of the celebration and leave us a note.
+            {isAfterWedding
+              ? 'Thank you for celebrating with us. We would love to hear what you thought of the day.'
+              : 'Your thoughts mean a lot to us. Rate each part of the celebration and leave us a note.'}
           </p>
         </header>
 

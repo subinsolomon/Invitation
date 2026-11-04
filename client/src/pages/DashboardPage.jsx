@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { dashboardService } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import { useWeddingPhase } from '../context/WeddingPhaseContext';
 
 const ratingRows = [
   { key: 'food', field: 'foodRating', label: 'Food', color: '#facc15' },
@@ -41,12 +42,16 @@ const downloadCsv = (filename, headers, rows) => {
 
 export const DashboardPage = () => {
   const { currentTheme } = useTheme();
+  const { weddingPhase, setWeddingPhase } = useWeddingPhase();
   const prefersReducedMotion = useReducedMotion();
   const [tokenInput, setTokenInput] = useState('');
   const [accessToken, setAccessToken] = useState('');
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(false);
   const [updatingFeedbackStatus, setUpdatingFeedbackStatus] = useState(false);
+  const [updatingRSVPStatus, setUpdatingRSVPStatus] = useState(false);
+  const [updatingMemorySharingStatus, setUpdatingMemorySharingStatus] = useState(false);
+  const [updatingWeddingPhase, setUpdatingWeddingPhase] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const loadDashboard = async (token) => {
@@ -89,6 +94,49 @@ export const DashboardPage = () => {
       setErrorMessage(error.message || 'Could not change feedback availability.');
     } finally {
       setUpdatingFeedbackStatus(false);
+    }
+  };
+
+  const handleRSVPToggle = async () => {
+    const enabled = !dashboard.rsvpEnabled;
+    setUpdatingRSVPStatus(true);
+    setErrorMessage('');
+    try {
+      const result = await dashboardService.setRSVPEnabled(accessToken, enabled);
+      setDashboard((current) => ({ ...current, rsvpEnabled: result.rsvpEnabled }));
+    } catch (error) {
+      setErrorMessage(error.message || 'Could not change RSVP availability.');
+    } finally {
+      setUpdatingRSVPStatus(false);
+    }
+  };
+
+  const handleMemorySharingToggle = async () => {
+    const enabled = !dashboard.memorySharingEnabled;
+    setUpdatingMemorySharingStatus(true);
+    setErrorMessage('');
+    try {
+      const result = await dashboardService.setMemorySharingEnabled(accessToken, enabled);
+      setDashboard((current) => ({ ...current, memorySharingEnabled: result.memorySharingEnabled }));
+    } catch (error) {
+      setErrorMessage(error.message || 'Could not change Share Your Memories availability.');
+    } finally {
+      setUpdatingMemorySharingStatus(false);
+    }
+  };
+
+  const handleWeddingPhaseToggle = async () => {
+    const phase = weddingPhase === 'before' ? 'after' : 'before';
+    setUpdatingWeddingPhase(true);
+    setErrorMessage('');
+    try {
+      const result = await dashboardService.setWeddingPhase(accessToken, phase);
+      setWeddingPhase(result.weddingPhase);
+      setDashboard((current) => ({ ...current, weddingPhase: result.weddingPhase }));
+    } catch (error) {
+      setErrorMessage(error.message || 'Could not change the wedding phase.');
+    } finally {
+      setUpdatingWeddingPhase(false);
     }
   };
 
@@ -202,6 +250,32 @@ export const DashboardPage = () => {
 
         {errorMessage && <p className="mb-6 rounded-lg border border-rose-300/25 bg-rose-400/10 px-4 py-3 text-sm text-rose-100" role="alert">{errorMessage}</p>}
 
+        <section className="mb-6 flex flex-col gap-4 border-y border-white/10 py-5 sm:flex-row sm:items-center sm:justify-between" aria-label="Wedding phase">
+          <div>
+            <p className="font-medium text-white">Website phase</p>
+            <p className="mt-1 text-sm text-white/55">
+              {weddingPhase === 'after'
+                ? 'After the wedding — guest pages show thank-you and memory-focused copy.'
+                : 'Before the wedding — guest pages show invitation and RSVP copy.'}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`text-xs font-medium ${weddingPhase === 'before' ? 'text-gold-200' : 'text-white/45'}`}>Before</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={weddingPhase === 'after'}
+              aria-label="After the wedding phase"
+              onClick={handleWeddingPhaseToggle}
+              disabled={updatingWeddingPhase}
+              className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border transition-colors disabled:cursor-wait disabled:opacity-60 ${weddingPhase === 'after' ? 'border-gold-300/50 bg-gold-300/25' : 'border-white/20 bg-white/10'}`}
+            >
+              <span className={`absolute left-1 h-6 w-6 rounded-full shadow transition-transform ${weddingPhase === 'after' ? 'translate-x-6 bg-gold-200' : 'translate-x-0 bg-slate-300'}`} />
+            </button>
+            <span className={`text-xs font-medium ${weddingPhase === 'after' ? 'text-gold-200' : 'text-white/45'}`}>After</span>
+          </div>
+        </section>
+
         <section aria-label="RSVP summary" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {statCards.map((card, index) => (
             <motion.article
@@ -236,6 +310,48 @@ export const DashboardPage = () => {
             className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border transition-colors disabled:cursor-wait disabled:opacity-60 ${dashboard.feedbackEnabled ? 'border-emerald-300/50 bg-emerald-400/25' : 'border-white/20 bg-white/10'}`}
           >
             <span className={`absolute left-1 h-6 w-6 rounded-full shadow transition-transform ${dashboard.feedbackEnabled ? 'translate-x-6 bg-emerald-200' : 'translate-x-0 bg-slate-300'}`} />
+          </button>
+        </section>
+
+        <section className="flex flex-col gap-4 border-b border-white/10 py-5 sm:flex-row sm:items-center sm:justify-between" aria-label="RSVP availability">
+          <div>
+            <p className="font-medium text-white">RSVP submissions</p>
+            <p className="mt-1 text-sm text-white/55">
+              {dashboard.rsvpEnabled ? 'Guests can submit RSVP responses.' : 'The RSVP form is hidden from guests.'}
+              {' '}Changes reach open RSVP pages within a few seconds.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={dashboard.rsvpEnabled}
+            aria-label="Accept RSVP submissions"
+            onClick={handleRSVPToggle}
+            disabled={updatingRSVPStatus}
+            className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border transition-colors disabled:cursor-wait disabled:opacity-60 ${dashboard.rsvpEnabled ? 'border-emerald-300/50 bg-emerald-400/25' : 'border-white/20 bg-white/10'}`}
+          >
+            <span className={`absolute left-1 h-6 w-6 rounded-full shadow transition-transform ${dashboard.rsvpEnabled ? 'translate-x-6 bg-emerald-200' : 'translate-x-0 bg-slate-300'}`} />
+          </button>
+        </section>
+
+        <section className="flex flex-col gap-4 border-b border-white/10 py-5 sm:flex-row sm:items-center sm:justify-between" aria-label="Share Your Memories availability">
+          <div>
+            <p className="font-medium text-white">Share Your Memories tab</p>
+            <p className="mt-1 text-sm text-white/55">
+              {dashboard.memorySharingEnabled ? 'The placeholder tab is visible to guests.' : 'The tab is hidden from guests.'}
+              {' '}Guest uploads are not active yet.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={dashboard.memorySharingEnabled}
+            aria-label="Show Share Your Memories tab"
+            onClick={handleMemorySharingToggle}
+            disabled={updatingMemorySharingStatus}
+            className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border transition-colors disabled:cursor-wait disabled:opacity-60 ${dashboard.memorySharingEnabled ? 'border-emerald-300/50 bg-emerald-400/25' : 'border-white/20 bg-white/10'}`}
+          >
+            <span className={`absolute left-1 h-6 w-6 rounded-full shadow transition-transform ${dashboard.memorySharingEnabled ? 'translate-x-6 bg-emerald-200' : 'translate-x-0 bg-slate-300'}`} />
           </button>
         </section>
 
